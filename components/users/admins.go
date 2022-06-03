@@ -106,7 +106,11 @@ func (admin Admin) UpdateEvent(id, name, description, eventType, startTime, endT
 	event.StartTime = startTime
 	event.EndTime = endTime
 	event.Location = location
-	event.MaxStudents = maxStudents
+	
+	if maxStudents == 0 {
+		maxStudents = math.MaxInt64
+	}
+
 	err = dbmanager.Update(&event)
 	return err
 }

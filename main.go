@@ -20,6 +20,11 @@ func main() {
 	errors = append(errors, dbmanager.AutoCreateStruct(&users.Student{}))
 	errors = append(errors, dbmanager.AutoCreateStruct(&users.Team{}))
 	checkForErrors(errors)
+	
+	err := dbmanager.Close("eventscheduler.db")
+	if err != nil {
+		panic(err)
+	}
 
 }
 

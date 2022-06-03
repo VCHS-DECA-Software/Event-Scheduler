@@ -6,7 +6,7 @@ import (
 
 type Event struct {
 	ID          string `storm:"id"`
-	AdminID    string `storm:"index"`
+	AdminID     string `storm:"index"`
 	Name        string `storm:"unique"`
 	Description string
 	EventType   string `storm:"index"`
@@ -15,7 +15,7 @@ type Event struct {
 	Location    string `storm:"index"`
 	MaxStudents int
 	JudgeIDs    []string
-	StudentIDs  []string
+	TeamIDs  []string
 }
 
 func GetEvent(id string) (Event, error) {
@@ -24,6 +24,7 @@ func GetEvent(id string) (Event, error) {
 	return event, err
 }
 
+//GetAllEvents is for internal use only. Use ViewAllEvents from the users package to view all events.
 func GetAllEvents() ([]Event, error) {
 	var events []Event
 	err := dbmanager.QueryAll(&events)

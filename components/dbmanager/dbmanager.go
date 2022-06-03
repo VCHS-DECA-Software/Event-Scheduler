@@ -31,6 +31,12 @@ func Query(fieldName string, value, to interface{}) error {
 	return err
 }
 
+//GroupQuery executes a group query given a struct
+func GroupQuery(fieldName string, value, to interface{}) error {
+	err := db.Find(fieldName, value, to)
+	return err
+}
+
 func QueryAll(to interface{}) error {
 	err := db.All(to)
 	return err

@@ -31,6 +31,32 @@ func CreateJudge(username, name, password string) error {
 func GetJudge(id string) (Judge, error) {
 	var judge Judge
 	err := dbmanager.Query("ID", id, &judge)
+	judge.Username = ""
+	judge.Password = ""
+
+	eventNames := make([]string, 0)
+	for _, eventID := range judge.MyEventIDs {
+		var event events.Event
+		dbmanager.Query("ID", eventID, &event)
+		eventNames = append(eventNames, event.Name)
+	}
+	judge.MyEventIDs = eventNames
+
+	studentNames := make([]string, 0)
+	for _, assignedStudentID := range judge.AssignedStudentIDs {
+		var student Student
+		dbmanager.Query("ID", assignedStudentID, &student)
+		student.Password = ""
+		studentNames = append(studentNames, student.Name)
+	}
+	judge.AssignedStudentIDs = studentNames
+
+	return judge, err
+}
+
+func readJudge(id string) (Judge, error) {
+	var judge Judge
+	err := dbmanager.Query("ID", id, &judge)
 	return judge, err
 }
 

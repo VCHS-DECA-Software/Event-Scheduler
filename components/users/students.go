@@ -6,6 +6,7 @@ import (
 	"main/components/dbmanager"
 	"main/components/encryption"
 	"main/components/events"
+	"strings"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -259,17 +260,15 @@ func (student Student) JoinEvent(teamID, eventID string) error {
 	for _, studentID := range team.StudentIDs {
 		var student Student
 		dbmanager.Query("ID", studentID, &student)
-		if len(student.MyEventIDs) > 3 {
-			return fmt.Errorf("student %s has already signed up for 3 events", student.Name)
+		
+		if !student.checkEventTypes(event) {
+			return fmt.Errorf("student %s cannot register for this event", student.Name)
 		}
-
-		// if len(student.MyEventIDs) >= 2 && !strings.Contains(strings.ToLower(event.EventType), "written presentation") {
-		// 	return fmt.Errorf("student %s needs to sign up for a written presentation", student.Name)
-		// }
 
 		if student.multipleEventsAtSameTime(event) {
-			return fmt.Errorf("student %s has already signed up for an event at the same time", student.Name)
+			return fmt.Errorf("student %s has already registered for an event at the same time", student.Name)
 		}
+		
 		student.MyEventIDs = append(student.MyEventIDs, eventID)
 		err = dbmanager.Update(&student)
 		if err != nil {
@@ -369,4 +368,29 @@ func countStudentsForEvent(id string) (int, error) {
 		count += len(team.StudentIDs)
 	}
 	return count, nil
+}
+
+func (student Student) checkEventTypes(currEvent events.Event) bool {
+
+	if len(student.MyEventIDs) == 0 {
+		return true
+	}
+
+	if len(student.MyEventIDs) >= 2 {
+		return false
+	}
+
+	var firstEvent events.Event
+	dbmanager.Query("ID", student.MyEventIDs[0], &firstEvent)
+
+	if (len(student.MyEventIDs) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "written presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "oral presentation")) {
+		return true
+	}
+
+	if (len(student.MyEventIDs) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "oral presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "written presentation")) {
+		return true
+	}
+
+	return false
+
 }

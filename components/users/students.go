@@ -62,6 +62,15 @@ func GetStudent(id string) (Student, error) {
 	return student, err
 }
 
+func AuthenticateStudent(username, password string) bool {
+	var student Student
+	err := dbmanager.Query("Username", username, &student)
+	if err != nil {
+		return false
+	}
+	return encryption.CheckPasswordHash(password, student.Password)
+}
+
 func UpdateStudent(id, username, name, password string) error {
 	var student Student
 	err := dbmanager.Query("ID", id, &student)

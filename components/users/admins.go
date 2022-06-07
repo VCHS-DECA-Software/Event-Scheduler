@@ -34,6 +34,15 @@ func GetAdmin(id string) (Admin, error) {
 	return admin, err
 }
 
+func AuthenticateAdmin(username, password string) bool {
+	var admin Admin
+	err := dbmanager.Query("Username", username, &admin)
+	if err != nil {
+		return false
+	}
+	return encryption.CheckPasswordHash(password, admin.Password)
+}
+
 func UpdateAdmin(id, username, name, password string) error {
 	var admin Admin
 	err := dbmanager.Query("ID", id, &admin)

@@ -54,6 +54,15 @@ func GetJudge(id string) (Judge, error) {
 	return judge, err
 }
 
+func AuthenticateJudge(username, password string) bool {
+	var judge Judge
+	err := dbmanager.Query("Username", username, &judge)
+	if err != nil {
+		return false
+	}
+	return encryption.CheckPasswordHash(password, judge.Password)
+}
+
 func readJudge(id string) (Judge, error) {
 	var judge Judge
 	err := dbmanager.Query("ID", id, &judge)

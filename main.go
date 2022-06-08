@@ -20,12 +20,11 @@ func main() {
 	errors = append(errors, dbmanager.AutoCreateStruct(&users.Student{}))
 	errors = append(errors, dbmanager.AutoCreateStruct(&users.Team{}))
 	checkForErrors(errors)
-	
+
 	err = dbmanager.Close()
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func checkForErrors(errors []error) {

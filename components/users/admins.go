@@ -2,7 +2,6 @@ package users
 
 import (
 	"main/components/dbmanager"
-	"main/components/encryption"
 	"math"
 
 	"main/components/events"
@@ -10,57 +9,9 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type Admin struct {
-	ID       string `storm:"id"`
-	Username string `storm:"unique"`
-	Name     string
-	Password string
-}
-
-func CreateAdmin(username, name, password string) error {
-	id := uuid.NewV4().String()
-	hashedPassword, err := encryption.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	err = dbmanager.Save(&Admin{ID: id, Username: username, Name: name, Password: hashedPassword})
-	return err
-}
-
-func GetAdmin(id string) (Admin, error) {
-	var admin Admin
-	err := dbmanager.Query("ID", id, &admin)
-	admin.Password = ""
-	return admin, err
-}
-
-func UpdateAdmin(id, username, name, password string) error {
-	var admin Admin
-	err := dbmanager.Query("ID", id, &admin)
-	if err != nil {
-		return err
-	}
-	admin.Username = username
-	admin.Name = name
-	hashedPassword, _ := encryption.HashPassword(password)
-	admin.Password = hashedPassword
-	err = dbmanager.Update(&admin)
-	return err
-}
-
-func DeleteAdmin(id string) error {
-	var admin Admin
-	err := dbmanager.Query("ID", id, &admin)
-	if err != nil {
-		return err
-	}
-	err = dbmanager.Delete(&admin)
-	return err
-}
-
 func (admin Admin) CreateEvent(name, description, eventType, startTime, endTime, location string, maxStudents int) error {
 	id := uuid.NewV4().String()
-	
+
 	if maxStudents == 0 {
 		maxStudents = math.MaxInt64
 	}
@@ -106,7 +57,7 @@ func (admin Admin) UpdateEvent(id, name, description, eventType, startTime, endT
 	event.StartTime = startTime
 	event.EndTime = endTime
 	event.Location = location
-	
+
 	if maxStudents == 0 {
 		maxStudents = math.MaxInt64
 	}
@@ -143,19 +94,19 @@ func (admin Admin) AssignStudentsAndJudges(id string) error {
 
 	for _, judge := range judges {
 		for _, team := range teams {
-			if len(judge.AssignedStudentIDs) <= 6 {
-				judge.AssignedStudentIDs = append(judge.AssignedStudentIDs, team.ID)
+			if len(judge.AssignedTeams) <= 6 {
+				judge.AssignedTeams = append(judge.AssignedTeams, team.ID)
 				team.AssignedJudgeIDs = append(team.AssignedJudgeIDs, judge.ID)
 			}
 		}
 	}
-	
+
 	return err
 }
 
 func (admin Admin) AssignForAllEvents() error {
 	events, err := events.GetAllEvents()
-	
+
 	for _, event := range events {
 		admin.AssignStudentsAndJudges(event.ID)
 	}

@@ -4,45 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"main/components/dbmanager"
-	"main/components/encryption"
 	"main/components/events"
+	"main/components/links"
 	"strings"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
 
-type Student struct {
-	ID         string `storm:"id"`
-	Username   string `storm:"unique"`
-	Name       string
-	Password   string
-	TeamIDs    []string
-	MyEventIDs []string
-}
-
-type Team struct {
-	ID               string `storm:"id"`
-	TeamOwnerID      string
-	Name             string `storm:"index"`
-	StudentIDs       []string
-	AssignedJudgeIDs []string
-}
-
-func CreateStudent(username, name, password string) error {
-	id := uuid.NewV4().String()
-	hashedPassword, err := encryption.HashPassword(password)
-	if err != nil {
-		return err
+func NewStudent(name string) Student {
+	return Student{
+		Name:   name,
+		Teams:  links.NewLink(1),
 	}
-	err = dbmanager.Save(&Student{ID: id, Username: username, Name: name, Password: hashedPassword})
-	return err
-}
-
-func readStudent(id string) (Student, error) {
-	var student Student
-	err := dbmanager.Query("ID", id, &student)
-	return student, err
 }
 
 func GetStudent(id string) (Student, error) {
@@ -50,43 +24,22 @@ func GetStudent(id string) (Student, error) {
 	err := dbmanager.Query("ID", id, &student)
 	student.Username = ""
 	student.Password = ""
-	student.TeamIDs = nil
+	student.Teams = nil
 
 	eventNames := make([]string, 0)
-	for _, eventID := range student.MyEventIDs {
+	for _, eventID := range student.Events {
 		var event events.Event
 		dbmanager.Query("ID", eventID, &event)
 		eventNames = append(eventNames, event.Name)
 	}
-	student.MyEventIDs = eventNames
+	student.Events = eventNames
 	return student, err
 }
 
-func UpdateStudent(id, username, name, password string) error {
-	var student Student
-	err := dbmanager.Query("ID", id, &student)
-	if err != nil {
-		return err
-	}
-	student.Username = username
-	student.Name = name
-	hashedPassword, _ := encryption.HashPassword(password)
-	student.Password = hashedPassword
-	err = dbmanager.Update(&student)
-	return err
-}
-
-func DeleteStudent(id string) error {
-	var student Student
-	err := dbmanager.Query("ID", id, &student)
-	if err != nil {
-		return err
-	}
-	err = dbmanager.Delete(&student)
-	return err
-}
-
-func (student Student) CreateTeam(name string) error {
+func (student *Account[Student]) CreateTeam(name string) error {
+	student.Update(Account[Student]{
+		Data: Student{},
+	})
 	id := uuid.NewV4().String()
 	err := dbmanager.Save(&Team{ID: id, Name: name, TeamOwnerID: student.ID})
 	if err != nil {
@@ -98,7 +51,7 @@ func (student Student) CreateTeam(name string) error {
 
 func (student Student) GetTeams() ([]Team, error) {
 	var teams []Team
-	for _, teamID := range student.TeamIDs {
+	for _, teamID := range student.Teams {
 		team, _ := GetTeam(teamID)
 		teams = append(teams, team)
 	}
@@ -260,7 +213,7 @@ func (student Student) JoinEvent(teamID, eventID string) error {
 	for _, studentID := range team.StudentIDs {
 		var student Student
 		dbmanager.Query("ID", studentID, &student)
-		
+
 		if !student.checkEventTypes(event) {
 			return fmt.Errorf("student %s cannot register for this event", student.Name)
 		}
@@ -268,8 +221,8 @@ func (student Student) JoinEvent(teamID, eventID string) error {
 		if student.multipleEventsAtSameTime(event) {
 			return fmt.Errorf("student %s has already registered for an event at the same time", student.Name)
 		}
-		
-		student.MyEventIDs = append(student.MyEventIDs, eventID)
+
+		student.Events = append(student.Events, eventID)
 		err = dbmanager.Update(&student)
 		if err != nil {
 			return err
@@ -299,9 +252,9 @@ func (student Student) LeaveEvent(teamID, eventID string) error {
 		return err
 	}
 
-	for i, id := range student.MyEventIDs {
+	for i, id := range student.Events {
 		if id == eventID {
-			student.MyEventIDs = append(student.MyEventIDs[:i], student.MyEventIDs[i+1:]...)
+			student.Events = append(student.Events[:i], student.Events[i+1:]...)
 			break
 		}
 	}
@@ -335,7 +288,7 @@ func (team Team) isTeamInEvent(eventID string) bool {
 }
 
 func (student Student) multipleEventsAtSameTime(currEvent events.Event) bool {
-	for _, eventID := range student.MyEventIDs {
+	for _, eventID := range student.Events {
 		var event events.Event
 		dbmanager.Query("ID", eventID, &event)
 
@@ -372,22 +325,22 @@ func countStudentsForEvent(id string) (int, error) {
 
 func (student Student) checkEventTypes(currEvent events.Event) bool {
 
-	if len(student.MyEventIDs) == 0 {
+	if len(student.Events) == 0 {
 		return true
 	}
 
-	if len(student.MyEventIDs) >= 2 {
+	if len(student.Events) >= 2 {
 		return false
 	}
 
 	var firstEvent events.Event
-	dbmanager.Query("ID", student.MyEventIDs[0], &firstEvent)
+	dbmanager.Query("ID", student.Events[0], &firstEvent)
 
-	if (len(student.MyEventIDs) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "written presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "oral presentation")) {
+	if (len(student.Events) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "written presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "oral presentation")) {
 		return true
 	}
 
-	if (len(student.MyEventIDs) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "oral presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "written presentation")) {
+	if (len(student.Events) == 1) && (strings.Contains(strings.ToLower(firstEvent.EventType), "oral presentation")) && (strings.Contains(strings.ToLower(currEvent.EventType), "written presentation")) {
 		return true
 	}
 

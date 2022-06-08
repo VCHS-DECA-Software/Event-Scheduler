@@ -15,7 +15,7 @@ type Event struct {
 	Location    string `storm:"index"`
 	MaxStudents int
 	JudgeIDs    []string
-	TeamIDs  []string
+	TeamIDs     []string
 }
 
 func GetEvent(id string) (Event, error) {

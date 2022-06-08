@@ -1,6 +1,6 @@
 module main
 
-go 1.17
+go 1.18
 
 require (
 	github.com/asdine/storm v2.1.2+incompatible

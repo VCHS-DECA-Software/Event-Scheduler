@@ -3,30 +3,8 @@ package users
 import (
 	"errors"
 	"main/components/dbmanager"
-	"main/components/encryption"
 	"main/components/events"
-
-	uuid "github.com/satori/go.uuid"
 )
-
-type Judge struct {
-	ID                 string `storm:"id"`
-	Username           string `storm:"unique"`
-	Name               string
-	Password           string
-	MyEventIDs         []string
-	AssignedStudentIDs []string
-}
-
-func CreateJudge(username, name, password string) error {
-	id := uuid.NewV4().String()
-	hashedPassword, err := encryption.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	err = dbmanager.Save(&Judge{ID: id, Username: username, Name: name, Password: hashedPassword})
-	return err
-}
 
 func GetJudge(id string) (Judge, error) {
 	var judge Judge
@@ -35,53 +13,23 @@ func GetJudge(id string) (Judge, error) {
 	judge.Password = ""
 
 	eventNames := make([]string, 0)
-	for _, eventID := range judge.MyEventIDs {
+	for _, eventID := range judge.Events {
 		var event events.Event
 		dbmanager.Query("ID", eventID, &event)
 		eventNames = append(eventNames, event.Name)
 	}
-	judge.MyEventIDs = eventNames
+	judge.Events = eventNames
 
 	studentNames := make([]string, 0)
-	for _, assignedStudentID := range judge.AssignedStudentIDs {
+	for _, assignedStudentID := range judge.AssignedTeams {
 		var student Student
 		dbmanager.Query("ID", assignedStudentID, &student)
 		student.Password = ""
 		studentNames = append(studentNames, student.Name)
 	}
-	judge.AssignedStudentIDs = studentNames
+	judge.AssignedTeams = studentNames
 
 	return judge, err
-}
-
-func readJudge(id string) (Judge, error) {
-	var judge Judge
-	err := dbmanager.Query("ID", id, &judge)
-	return judge, err
-}
-
-func UpdateJudge(id, username, name, password string) error {
-	var judge Judge
-	err := dbmanager.Query("ID", id, &judge)
-	if err != nil {
-		return err
-	}
-	judge.Username = username
-	judge.Name = name
-	hashedPassword, _ := encryption.HashPassword(password)
-	judge.Password = hashedPassword
-	err = dbmanager.Update(&judge)
-	return err
-}
-
-func DeleteJudge(id string) error {
-	var judge Judge
-	err := dbmanager.Query("ID", id, &judge)
-	if err != nil {
-		return err
-	}
-	err = dbmanager.Delete(&judge)
-	return err
 }
 
 func (judge Judge) JoinEvent(eventID string) error {
@@ -95,7 +43,7 @@ func (judge Judge) JoinEvent(eventID string) error {
 	if err != nil {
 		return err
 	}
-	judge.MyEventIDs = append(judge.MyEventIDs, eventID)
+	judge.Events = append(judge.Events, eventID)
 	err = dbmanager.Update(&judge)
 	if err != nil {
 		return err
@@ -112,9 +60,9 @@ func (judge Judge) LeaveEvent(eventID string) error {
 		return err
 	}
 
-	for i, id := range judge.MyEventIDs {
+	for i, id := range judge.Events {
 		if id == eventID {
-			judge.MyEventIDs = append(judge.MyEventIDs[:i], judge.MyEventIDs[i+1:]...)
+			judge.Events = append(judge.Events[:i], judge.Events[i+1:]...)
 			break
 		}
 	}
@@ -135,7 +83,7 @@ func (judge Judge) LeaveEvent(eventID string) error {
 }
 
 func (judge Judge) IsJudgeInEvent(eventID string) bool {
-	for _, id := range judge.MyEventIDs {
+	for _, id := range judge.Events {
 		if id == eventID {
 			return true
 		}

@@ -1,7 +1,6 @@
 package links
 
 import (
-	"main/components/common"
 	"main/components/globals"
 	"main/components/object"
 
@@ -97,8 +96,7 @@ func SearchWith[F, T, C any](id string, match q.Matcher) ([]object.Object[C], er
 			other = l.To
 		}
 
-		var t object.Object[C]
-		err := common.FromID(&t, other)
+		t, err := object.FromID[C](other)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +107,7 @@ func SearchWith[F, T, C any](id string, match q.Matcher) ([]object.Object[C], er
 		}
 
 		if matches {
-			result = append(result, t)
+			result = append(result, *t)
 		}
 	}
 

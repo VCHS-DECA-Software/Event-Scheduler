@@ -104,3 +104,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# tests
+tests/db/*.db

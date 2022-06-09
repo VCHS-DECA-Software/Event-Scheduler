@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+import "proto/errors.proto";
+
+option go_package = "components/proto";
+
+enum AccountType {
+    STUDENT = 0;
+    JUDGE = 1;
+    ADMIN = 2;
+}
+
+message Empty {}
+
+message Account {
+    AccountType type = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message Credentials {
+    AccountType type = 1;
+    string id = 2;
+    string token = 3;
+}
+
+service AccountManager {
+    rpc Create(Account) returns (WithStatus);
+    rpc Authenticate(Account) returns (WithStatus);
+    rpc Update(UpdateRequest) returns (Status);
+    rpc Delete(Credentials) returns (Status);
+}
+
+message WithStatus {
+    Credentials credentials = 1;
+    Status status = 2;
+}
+
+message UpdateRequest {
+    Credentials Credentials = 1;
+    string username = 2;
+    string password = 3;
+}

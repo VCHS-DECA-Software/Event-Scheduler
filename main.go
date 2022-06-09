@@ -1,36 +1,23 @@
 package main
 
 import (
-	"main/components/dbmanager"
-	"main/components/events"
+	"log"
+	"main/components/globals"
+	"main/components/links"
 	"main/components/users"
 )
 
-func main() {
-	err := dbmanager.Open("eventscheduler.db")
+func check(err error) {
 	if err != nil {
-		panic(err)
-	}
-
-	var errors []error
-
-	errors = append(errors, dbmanager.AutoCreateStruct(&events.Event{}))
-	errors = append(errors, dbmanager.AutoCreateStruct(&users.Admin{}))
-	errors = append(errors, dbmanager.AutoCreateStruct(&users.Judge{}))
-	errors = append(errors, dbmanager.AutoCreateStruct(&users.Student{}))
-	errors = append(errors, dbmanager.AutoCreateStruct(&users.Team{}))
-	checkForErrors(errors)
-
-	err = dbmanager.Close()
-	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
-func checkForErrors(errors []error) {
-	for _, err := range errors {
-		if err != nil {
-			panic(err)
-		}
-	}
+func main() {
+	check(globals.Initialize(globals.Context{
+		DBName: "eventschedule.db",
+	}))
+	defer check(globals.Destroy())
+	check(users.Initialize())
+	check(links.Initialize())
 }

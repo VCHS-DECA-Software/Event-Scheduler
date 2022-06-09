@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "components/proto";
+
+enum StatusCode {
+    OK = 0;
+    ALREADY_EXISTS = 1;
+    DOES_NOT_EXIST = 2;
+}
+
+message Status {
+    StatusCode code = 1;
+    string message = 2;
+}

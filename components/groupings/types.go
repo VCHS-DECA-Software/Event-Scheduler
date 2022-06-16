@@ -9,6 +9,8 @@ const (
 )
 
 type Hierarchy[T any] struct {
+	ID string `storm:"id"`
+
 	Owner string `storm:"index"`
 	Name  string `storm:"unique"`
 	Data  T
@@ -24,4 +26,8 @@ type Event struct {
 }
 
 type Team struct {
+}
+
+type GroupingType interface {
+	Event | Team
 }

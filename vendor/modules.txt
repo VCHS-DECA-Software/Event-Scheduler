@@ -10,6 +10,9 @@ github.com/asdine/storm/codec/json
 github.com/asdine/storm/index
 github.com/asdine/storm/internal
 github.com/asdine/storm/q
+# github.com/golang-jwt/jwt v3.2.2+incompatible
+## explicit
+github.com/golang-jwt/jwt
 # github.com/golang/protobuf v1.5.2
 ## explicit; go 1.9
 github.com/golang/protobuf/jsonpb

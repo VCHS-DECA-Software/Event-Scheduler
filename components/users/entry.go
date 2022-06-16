@@ -2,17 +2,16 @@ package users
 
 import (
 	"main/components/globals"
-	"main/components/object"
 )
 
 func Initialize() error {
-	err := globals.DB.Init(&object.Object[Account[Student]]{})
+	err := globals.DB.Init(&Account[Student]{})
 	if err != nil {
 		return err
 	}
-	err = globals.DB.Init(&object.Object[Account[Judge]]{})
+	err = globals.DB.Init(&Account[Judge]{})
 	if err != nil {
 		return err
 	}
-	return globals.DB.Init(&object.Object[Account[Admin]]{})
+	return globals.DB.Init(&Account[Admin]{})
 }

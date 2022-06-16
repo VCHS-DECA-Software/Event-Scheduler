@@ -1,8 +1,10 @@
 package users
 
 import (
+	"main/components/db"
 	"main/components/encryption"
-	"main/components/object"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -25,23 +27,27 @@ type Type interface {
 }
 
 type Account[T Type] struct {
+	ID       string `storm:"id"`
 	Username string
 	Password string
 }
 
-func NewAccount[T Type](a Account[T]) (*object.Object[Account[T]], error) {
+func NewAccount[T Type](a Account[T]) (Account[T], error) {
 	hashedPassword, err := encryption.HashPassword(a.Password)
 	if err != nil {
-		return nil, err
+		return Account[T]{}, err
 	}
-	return object.NewObject(
-		Account[T]{
-			Username: a.Username,
-			Password: hashedPassword,
-		},
-	)
-}
 
-func (a *Account[T]) Authenticate(password string) bool {
-	return encryption.CheckPasswordHash(password, a.Password)
+	account := Account[T]{
+		ID:       uuid.NewV4().String(),
+		Username: a.Username,
+		Password: hashedPassword,
+	}
+
+	err = db.Save(&account)
+	if err != nil {
+		return Account[T]{}, err
+	}
+
+	return account, nil
 }

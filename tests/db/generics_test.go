@@ -1,7 +1,7 @@
 package db_test
 
 import (
-	"log"
+	"main/tests/utils"
 	"testing"
 
 	"github.com/asdine/storm"
@@ -25,40 +25,25 @@ type Type2 struct {
 }
 
 func TestGenericStructNested(t *testing.T) {
-	db, err := storm.Open("database_nested.db")
-	if err != nil {
-		t.Error(err)
-	}
+	db := utils.InitializeDB(t, "nested_generic")
+	defer utils.CleanupDB(t, "nested_generic", db)
 
-	err = db.Init(&Generic[any]{})
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = db.Save(&Generic[Type1]{
+	utils.Check(t, db.Init(&Generic[any]{}))
+	utils.Check(t, db.Save(&Generic[Type1]{
 		ID: "id1",
 		Data: Type1{
 			Text: "text1",
 		},
-	})
-	if err != nil {
-		t.Error(err)
-	}
-	err = db.Save(&Generic[Type2]{
+	}))
+	utils.Check(t, db.Save(&Generic[Type2]{
 		ID: "id2",
 		Data: Type2{
 			Text: "text2",
 		},
-	})
-	if err != nil {
-		t.Error(err)
-	}
+	}))
 
 	var type1 Generic[Type1]
-	err = db.One("ID", "id1", &type1)
-	if err != nil {
-		t.Error(err)
-	}
+	utils.Check(t, db.One("ID", "id1", &type1))
 	if type1.ID != "id1" {
 		t.Error("type1 ID mismatch")
 	}
@@ -67,10 +52,7 @@ func TestGenericStructNested(t *testing.T) {
 	}
 
 	var type2 Generic[Type2]
-	err = db.One("ID", "id2", &type2)
-	if err != nil {
-		t.Error(err)
-	}
+	utils.Check(t, db.One("ID", "id2", &type2))
 	if type2.ID != "id2" {
 		t.Error("type2 ID mismatch")
 	}
@@ -79,63 +61,39 @@ func TestGenericStructNested(t *testing.T) {
 	}
 
 	var shouldFail Generic[Type1]
-	err = db.One("ID", "id2", &shouldFail)
+	err := db.One("ID", "id2", &shouldFail)
 	if err == nil {
 		t.Error("non existent object should not be resolved")
 	} else if err.Error() != storm.ErrNotFound.Error() {
 		t.Error(err)
 	}
-	log.Println(shouldFail)
 }
 
 func TestGenericUnusedStructNested(t *testing.T) {
-	db, err := storm.Open("database_nested_unused.db")
-	if err != nil {
-		t.Error(err)
-	}
+	db := utils.InitializeDB(t, "nested_unused")
+	defer utils.CleanupDB(t, "nested_unused", db)
 
-	err = db.Init(&GenericUnused[any]{})
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = db.Save(&GenericUnused[Type1]{
-		ID: "id1",
-	})
-	if err != nil {
-		t.Error(err)
-	}
-	err = db.Save(&GenericUnused[Type2]{
-		ID: "id2",
-	})
-	if err != nil {
-		t.Error(err)
-	}
+	utils.Check(t, db.Init(&GenericUnused[any]{}))
+	utils.Check(t, db.Save(&GenericUnused[Type1]{ID: "id1"}))
+	utils.Check(t, db.Save(&GenericUnused[Type2]{ID: "id2"}))
 
 	var type1 GenericUnused[Type1]
-	err = db.One("ID", "id1", &type1)
-	if err != nil {
-		t.Error(err)
-	}
+	utils.Check(t, db.One("ID", "id1", &type1))
 	if type1.ID != "id1" {
 		t.Error("type1 ID mismatch")
 	}
 
 	var type2 GenericUnused[Type2]
-	err = db.One("ID", "id2", &type2)
-	if err != nil {
-		t.Error(err)
-	}
+	utils.Check(t, db.One("ID", "id2", &type2))
 	if type2.ID != "id2" {
 		t.Error("type2 ID mismatch")
 	}
 
 	var shouldFail GenericUnused[Type1]
-	err = db.One("ID", "id2", &shouldFail)
+	err := db.One("ID", "id2", &shouldFail)
 	if err == nil {
 		t.Error("non existent object should not be resolved")
 	} else if err.Error() != storm.ErrNotFound.Error() {
 		t.Error(err)
 	}
-	log.Println(shouldFail)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"main/components/encryption"
 	"main/components/globals"
 	"main/components/links"
 	"main/components/users"
@@ -18,6 +19,7 @@ func main() {
 		DBName: "eventschedule.db",
 	}))
 	defer check(globals.Destroy())
+	check(encryption.Initialize())
 	check(users.Initialize())
 	check(links.Initialize())
 }

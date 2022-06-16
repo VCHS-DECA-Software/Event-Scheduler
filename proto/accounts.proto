@@ -12,10 +12,15 @@ enum AccountType {
 
 message Empty {}
 
-message Account {
+message AccountDetails {
     AccountType type = 1;
     string username = 2;
     string password = 3;
+}
+
+message AuthRequest {
+    string id = 1;
+    AccountDetails details = 2;
 }
 
 message Credentials {
@@ -25,8 +30,8 @@ message Credentials {
 }
 
 service AccountManager {
-    rpc Create(Account) returns (WithStatus);
-    rpc Authenticate(Account) returns (WithStatus);
+    rpc Create(AccountDetails) returns (WithStatus);
+    rpc Authenticate(AuthRequest) returns (WithStatus);
     rpc Update(UpdateRequest) returns (Status);
     rpc Delete(Credentials) returns (Status);
 }
@@ -37,7 +42,6 @@ message WithStatus {
 }
 
 message UpdateRequest {
-    Credentials Credentials = 1;
-    string username = 2;
-    string password = 3;
+    Credentials credentials = 1;
+    AccountDetails details = 2;
 }

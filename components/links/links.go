@@ -1,8 +1,9 @@
 package links
 
 import (
+	"errors"
+	"main/components/db"
 	"main/components/globals"
-	"main/components/object"
 
 	"github.com/asdine/storm/q"
 	uuid "github.com/satori/go.uuid"
@@ -16,16 +17,34 @@ type Link[F, T any] struct {
 	To   string
 }
 
-func NewLink[F, T any](from *object.Object[F], to *object.Object[T]) (*Link[F, T], error) {
-	link := &Link[F, T]{
-		ID:   uuid.NewV4().String(),
-		From: from.ID,
-		To:   to.ID,
+func NewLink[F, T any](from string, to string) (*Link[F, T], error) {
+	fromExists, err := db.Has[F](from)
+	if !fromExists {
+		return nil, errors.New("the \"from\" id does not exist in database")
 	}
-	err := globals.DB.Save(&link)
 	if err != nil {
 		return nil, err
 	}
+
+	toExists, err := db.Has[T](to)
+	if !toExists {
+		return nil, errors.New("the \"to\" id does not exist in database")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	link := &Link[F, T]{
+		ID:   uuid.NewV4().String(),
+		From: from,
+		To:   to,
+	}
+
+	err = db.Save(&link)
+	if err != nil {
+		return nil, err
+	}
+
 	return link, nil
 }
 
@@ -59,18 +78,19 @@ func FindLink[F, T any](from, to string) (Link[F, T], error) {
 	return links[0], nil
 }
 
-//Find finds all other objects corresponding to the
+//Search finds all other objects corresponding to the
 //ID ("id") and type ("C") given
-func Search[F, T, C any](id string) ([]object.Object[C], error) {
+func Search[F, T, C any](id string) ([]C, error) {
 	return SearchWith[F, T, C](id, q.True())
 }
 
 //Find find one object with ID of the given "target", corresponding to the
 //ID ("id") and type ("C") given
-func Find[F, T, C any](id string, target string) (object.Object[C], error) {
+func Find[F, T, C any](id string, target string) (C, error) {
 	results, err := SearchWith[F, T, C](id, q.Eq("ID", target))
 	if err != nil {
-		return object.Object[C]{}, err
+		var r C
+		return r, err
 	}
 	return results[0], nil
 }
@@ -83,20 +103,20 @@ one you wish to search for. thus the id passed to the method must be
 the id of the corresponding type.
 - the "match" parameter defines the struct field matcher to run on the
 filtered results (type of object.Object) */
-func SearchWith[F, T, C any](id string, match q.Matcher) ([]object.Object[C], error) {
+func SearchWith[F, T, C any](id string, match q.Matcher) ([]C, error) {
 	links, err := GetLinks[F, T](id)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []object.Object[C]
+	var result []C
 	for _, l := range links {
 		other := l.From
 		if l.From == id {
 			other = l.To
 		}
 
-		t, err := object.FromID[C](other)
+		found, err := db.Get[C](other)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +127,7 @@ func SearchWith[F, T, C any](id string, match q.Matcher) ([]object.Object[C], er
 		}
 
 		if matches {
-			result = append(result, *t)
+			result = append(result, found)
 		}
 	}
 

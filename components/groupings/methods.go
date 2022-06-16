@@ -1,59 +1,53 @@
 package groupings
 
 import (
-	"errors"
-	"main/components/globals"
+	"fmt"
+	"main/components/db"
 	"main/components/links"
-	"main/components/object"
 	"main/components/users"
 
 	"github.com/asdine/storm"
 )
 
-func CreateGrouping[A users.Type, G any](
-	account *object.Object[users.Account[A]],
+func CreateGrouping[A users.Type, G GroupingType](
+	account users.Account[A],
 	grouping Hierarchy[G],
 ) error {
 	grouping.Owner = account.ID
-	group, err := object.NewObject(grouping)
+	err := db.Save(&grouping)
 	if err != nil {
 		return err
 	}
-	_, err = links.NewLink(account, group)
+	_, err = links.NewLink[A, G](account.ID, grouping.ID)
 	return err
 }
 
-func JoinGrouping[A users.Type, G any](
-	account *object.Object[users.Account[A]],
+func JoinGrouping[A users.Type, G GroupingType](
+	account users.Account[A],
 	id string,
 ) error {
-	_, err := links.Find[
-		users.Account[A], Hierarchy[G], Hierarchy[G],
-	](account.ID, id)
+	_, err := links.Find[A, G, G](account.ID, id)
 	if err == nil {
-		return errors.New("account has already joined groupipng")
+		return fmt.Errorf("account has already joined grouping")
 	}
 	if err.Error() != storm.ErrNotFound.Error() {
 		return err
 	}
 
-	var event object.Object[Hierarchy[G]]
-	err = globals.DB.One("ID", id, &event)
+	event, err := db.Get[Hierarchy[G]](id)
 	if err != nil {
 		return err
 	}
 
-	_, err = links.NewLink(account, &event)
+	_, err = links.NewLink[A, G](account.ID, event.ID)
 	return err
 }
 
-func LeaveGrouping[A users.Type, G any](
-	account *object.Object[users.Account[A]],
+func LeaveGrouping[A users.Type, G GroupingType](
+	account users.Account[A],
 	id string,
 ) error {
-	link, err := links.FindLink[
-		users.Account[A], Hierarchy[G],
-	](account.ID, id)
+	link, err := links.FindLink[A, G](account.ID, id)
 	if err != nil {
 		return err
 	}

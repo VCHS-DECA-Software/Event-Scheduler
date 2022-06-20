@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "components/proto";
+
+enum AccountType {
+    STUDENT = 0;
+    JUDGE = 1;
+    ADMIN = 2;
+}
+
+enum GroupingType {
+    EVENT = 0;
+    TEAM = 1;
+}

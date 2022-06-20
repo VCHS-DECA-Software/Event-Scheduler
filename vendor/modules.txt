@@ -10,6 +10,9 @@ github.com/asdine/storm/codec/json
 github.com/asdine/storm/index
 github.com/asdine/storm/internal
 github.com/asdine/storm/q
+# github.com/fxtlabs/primes v0.0.0-20150821004651-dad82d10a449
+## explicit
+github.com/fxtlabs/primes
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt

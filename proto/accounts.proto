@@ -1,14 +1,9 @@
 syntax = "proto3";
 
 import "proto/errors.proto";
+import "proto/types.proto";
 
 option go_package = "components/proto";
-
-enum AccountType {
-    STUDENT = 0;
-    JUDGE = 1;
-    ADMIN = 2;
-}
 
 message Empty {}
 

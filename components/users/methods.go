@@ -7,7 +7,7 @@ import (
 	"main/components/links"
 )
 
-func IssueToken[T Type](id string) (string, error) {
+func (a Account) IssueToken() (string, error) {
 	t, key, err := encryption.IssueToken()
 	if err != nil {
 		return "", err

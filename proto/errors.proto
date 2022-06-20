@@ -4,9 +4,10 @@ option go_package = "components/proto";
 
 enum StatusCode {
     OK = 0;
-    INVALID_TYPE = 1;
-    ALREADY_EXISTS = 2;
-    DOES_NOT_EXIST = 3;
+    INTERNAL_ERROR = 1;
+    INVALID_TYPE = 2;
+    ALREADY_EXISTS = 3;
+    NOT_FOUND = 4;
 }
 
 message Status {

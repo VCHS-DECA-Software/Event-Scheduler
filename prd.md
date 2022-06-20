@@ -36,3 +36,4 @@
 - require methods to CRUD all accounts
 - require methods to CRUD all teams and their associations
 - require methods to CRUD all events and their associations, as well as view all events collectively regardless of association
+- restrictions on associations

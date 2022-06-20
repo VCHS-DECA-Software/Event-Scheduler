@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/asdine/storm v2.1.2+incompatible
+	github.com/fxtlabs/primes v0.0.0-20150821004651-dad82d10a449
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9

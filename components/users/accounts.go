@@ -1,6 +1,7 @@
 package users
 
 import (
+	"go/types"
 	"main/components/db"
 	"main/components/encryption"
 
@@ -13,40 +14,29 @@ const (
 	ADMIN
 )
 
-/* these empty structs exist for differentiation, please take a look
-at docs/database.md a more detailed explanation */
-type Student struct {
-}
-type Judge struct {
-}
-type Admin struct {
+type Account struct {
+	ID         string `storm:"id"`
+	Username   string
+	Password   string
+	types.Type `storm:"inline"`
 }
 
-type Type interface {
-	Student | Judge | Admin
-}
-
-type Account[T Type] struct {
-	ID       string `storm:"id"`
-	Username string
-	Password string
-}
-
-func NewAccount[T Type](a Account[T]) (Account[T], error) {
+func NewAccount(a Account) (Account, error) {
 	hashedPassword, err := encryption.HashPassword(a.Password)
 	if err != nil {
-		return Account[T]{}, err
+		return Account{}, err
 	}
 
-	account := Account[T]{
+	account := Account{
 		ID:       uuid.NewV4().String(),
 		Username: a.Username,
 		Password: hashedPassword,
+		Type:     a.Type,
 	}
 
 	err = db.Save(&account)
 	if err != nil {
-		return Account[T]{}, err
+		return Account{}, err
 	}
 
 	return account, nil

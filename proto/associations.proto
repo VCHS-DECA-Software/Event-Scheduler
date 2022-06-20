@@ -2,13 +2,9 @@ syntax = "proto3";
 
 import "proto/errors.proto";
 import "proto/accounts.proto";
+import "proto/types.proto";
 
 option go_package = "components/proto";
-
-enum GroupingType {
-    EVENT = 0;
-    TEAM = 1;
-}
 
 enum EventType {
     ORAL = 0;

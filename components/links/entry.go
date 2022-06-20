@@ -5,5 +5,5 @@ import (
 )
 
 func Initialize() error {
-	return globals.DB.Init(&Link[any, any]{})
+	return globals.DB.Init(&Link{})
 }

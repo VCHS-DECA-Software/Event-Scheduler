@@ -7,13 +7,11 @@
 - time
     - `time start` - the starting time
     - `time divisions` - a list of durations specifying "slots of time"
-
 - `students` - a list of students
 - `judges` - a list of judges
 - `events` - a list of events
 - `rooms` - a list of occupiable rooms
-
-- student requests - a list of "requests" by a student to join an event
+- `student requests` - a list of "requests" by a student to join an event
 
 #### outputs
 

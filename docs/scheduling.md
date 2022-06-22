@@ -21,15 +21,16 @@
 - `judgement` - a judge + the `assignments` they will judge throughout the divisions of time
 - `housing` - a room + the `judgements` that will be happening in the room
 
-#### the algorithm
+#### algorithm
 
 the algorithm of the scheduler works bottom to top (from the most granular decisions to the larger ones)
 
 1. parse the `student requests` into `assignments`.
 1. assign requests to judges based on a few rules
-    1. add events to judges that already have the same event type and are not full
-    1. if there is no judge with the same event type, add it to a judge with no `assignments`
-    1. if there are no judges with no `assignments`, keep it on hold
-1. get the leftovers and assign them to judges that aren't full regardless of event type
-    - if this is not possible, warn the user
+    1. get the divisions of time that are "occupied" by an existing request
+        - here, "occupied" means another request in the same time division that shares some students with the current request's group
+    1. search all time divisions of all judges, if a time division is empty (not taken by an existing assignment) and not part of the "occupied". assign the request to it.
+        - this process is done twice, the first time an extra clause is added: "there must be at least one vertically adjacent request that has the same event type as the current request"
+    1. if the request is still unable to be assigned, add it to the leftovers
+1. if there are leftovers, warn the user
 1. attempt to spread the judges evenly across the rooms

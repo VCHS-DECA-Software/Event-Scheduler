@@ -18,3 +18,9 @@ go build; ./fake
 ```
 
 then open `output.csv` in LibreOffice or something.
+
+### timeline
+
+- [ ] add group conflict warnings
+- [ ] add form based data gathering
+- [ ] connect the two

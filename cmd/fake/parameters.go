@@ -69,8 +69,8 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 			Divisions: divisions,
 		},
 		&proto.Constraints{
-			JudgeStudents: 6,
-			GroupSize:     4,
+			JudgeStudents: int32(config.TimeDivisions),
+			GroupSize:     int32(config.GroupCapacity),
 		},
 		&proto.Registration{
 			Students: students,
@@ -103,7 +103,9 @@ func FakeRequests(c scheduler.ScheduleContext, o RequestOptions) []*proto.Studen
 		solo := rand.Float64() < o.SoloRatio
 		if !solo {
 			number := rand.Intn(int(c.GroupSize))
-			partners := common.SelectRandom(studentPool, number)
+			partners := common.SelectRandom(
+				common.Without(studentPool, studentID), number,
+			)
 			group = append(group, partners...)
 		}
 

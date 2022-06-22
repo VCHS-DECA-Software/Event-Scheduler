@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"Event-Scheduler/components/common"
 	"Event-Scheduler/components/proto"
 	"fmt"
 	"log"
@@ -66,57 +67,82 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 	for _, j := range c.Judges {
 		judges = append(judges, &Judgement{
 			Judge:       j,
-			Assignments: []Assignment{},
+			Assignments: make([]Assignment, len(c.Divisions)),
 		})
 	}
 
 	leftover := []Assignment{}
+assignments:
 	for _, a := range assignments {
-		/* this section does the following
-		1. appends assignment to the judge if it already contains another
-			assignment with the same event
-		2. if the judge has nothing assigned it will append the assignment
-		(the hypothetical case where an empty-handed judge comes before a
-		judge with assignments of the same event cannot happen) */
-		assigned := false
+		//see "algorithm" in docs/scheduling.md
+		occupied := map[int]bool{}
 		for _, j := range judges {
-			if len(j.Assignments) > 0 &&
-				len(j.Assignments) < int(c.JudgeStudents) {
-				if j.Assignments[len(j.Assignments)-1].Event.ID == a.Event.ID {
-					j.Assignments = append(j.Assignments, a)
-					assigned = true
-					break
+			for i := 0; i < len(c.Divisions); i++ {
+				if common.Intersects(j.Assignments[i].Group, a.Group) {
+					occupied[i] = true
 				}
-			} else if len(j.Assignments) == 0 {
-				j.Assignments = append(j.Assignments, a)
-				assigned = true
-				break
 			}
 		}
 
-		if !assigned {
-			leftover = append(leftover, a)
-		}
-	}
-
-	/* account for leftover assignments, this will attempt to assign the
-	leftovers to any judges with space left, if there are still leftovers
-	then report a warning */
-	reassigned := 0
-	for _, a := range leftover {
 		for _, j := range judges {
-			if len(j.Assignments) < int(c.JudgeStudents) {
-				j.Assignments = append(j.Assignments, a)
-				reassigned++
-				break
+			for i := 0; i < len(c.Divisions); i++ {
+				if occupied[i] {
+					continue
+				}
+				if j.Assignments[i].Event != nil {
+					continue
+				}
+				//checks if there is an (vertically) adjacent
+				//assignment with the same event
+				if (i > 0 && j.Assignments[i-1].Event != nil &&
+					j.Assignments[i-1].Event.ID == a.Event.ID) ||
+					(i < len(c.Divisions)-1 && j.Assignments[i+1].Event != nil &&
+						j.Assignments[i+1].Event.ID == a.Event.ID) {
+					j.Assignments[i] = a
+					continue assignments
+				}
 			}
 		}
+
+		for _, j := range judges {
+			for i := 0; i < len(c.Divisions); i++ {
+				if occupied[i] {
+					continue
+				}
+				if j.Assignments[i].Event == nil {
+					j.Assignments[i] = a
+					continue assignments
+				}
+			}
+		}
+
+		leftover = append(leftover, a)
 	}
-	if reassigned < len(leftover) {
+
+	if len(leftover) > 0 {
 		Warn(fmt.Sprintf(
-			"there are %v leftover student requests that exceed "+
-				"maximum judge capacity", len(leftover)-reassigned,
+			"there are %v leftover student requests that could not "+
+				"be assigned without conflicts", len(leftover),
 		))
+	}
+
+	for i := 0; i < len(c.Divisions); i++ {
+		contains := map[string]bool{}
+		for _, j := range judges {
+			if i >= len(j.Assignments) {
+				continue
+			}
+			for _, s := range j.Assignments[i].Group {
+				if !contains[s.Email] {
+					contains[s.Email] = true
+					continue
+				}
+				Warn(fmt.Sprintf(
+					"there is a conflict involving %v on division %v",
+					s.FirstName, i,
+				))
+			}
+		}
 	}
 
 	//try and spread out judges evenly throughout the rooms

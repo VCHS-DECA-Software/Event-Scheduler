@@ -66,6 +66,10 @@ func CSV(f io.Writer, output scheduler.Output) error {
 						s.LastName,
 					))
 				}
+				if j.Assignments[i].Event == nil {
+					row = append(row, "")
+					continue
+				}
 				row = append(row, fmt.Sprintf(
 					"%v - %v",
 					strings.Join(names, ", "),

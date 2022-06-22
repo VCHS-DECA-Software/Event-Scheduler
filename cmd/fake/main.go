@@ -24,12 +24,12 @@ func main() {
 		// TimeDivisions: 5,
 
 		Events:        10,
-		GroupCapacity: 4,
+		GroupCapacity: 3,
 	})
 	requests := FakeRequests(c, RequestOptions{
 		MinimumEvents: 1,
 		MaximumEvents: 3,
-		SoloRatio:     1,
+		SoloRatio:     0.2,
 	})
 
 	o := scheduler.Schedule(c, requests)

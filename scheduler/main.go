@@ -43,7 +43,7 @@ func NewContext(
 		context.Judges[j.Email] = j
 	}
 	for _, e := range r.Events {
-		context.Events[e.ID] = e
+		context.Events[e.Id] = e
 	}
 
 	return context
@@ -71,8 +71,38 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 		})
 	}
 
+	assign := func(occupied map[int]bool, a Assignment, withAdjacent bool) bool {
+		for _, j := range judges {
+			if !common.Intersects([]string{a.Event.Id}, j.Judge.Judgeable) &&
+				len(j.Judge.Judgeable) > 0 {
+				continue
+			}
+			for i := 0; i < len(c.Divisions); i++ {
+				if occupied[i] {
+					continue
+				}
+				if j.Assignments[i].Event != nil {
+					continue
+				}
+				if withAdjacent {
+					//checks if there is an (vertically) adjacent
+					//assignment with the same event
+					if (i > 0 && j.Assignments[i-1].Event != nil &&
+						j.Assignments[i-1].Event.Id == a.Event.Id) ||
+						(i < len(c.Divisions)-1 && j.Assignments[i+1].Event != nil &&
+							j.Assignments[i+1].Event.Id == a.Event.Id) {
+						j.Assignments[i] = a
+						return true
+					}
+				}
+				j.Assignments[i] = a
+				return true
+			}
+		}
+		return false
+	}
+
 	leftover := []Assignment{}
-assignments:
 	for _, a := range assignments {
 		//see "algorithm" in docs/scheduling.md
 		occupied := map[int]bool{}
@@ -84,36 +114,14 @@ assignments:
 			}
 		}
 
-		for _, j := range judges {
-			for i := 0; i < len(c.Divisions); i++ {
-				if occupied[i] {
-					continue
-				}
-				if j.Assignments[i].Event != nil {
-					continue
-				}
-				//checks if there is an (vertically) adjacent
-				//assignment with the same event
-				if (i > 0 && j.Assignments[i-1].Event != nil &&
-					j.Assignments[i-1].Event.ID == a.Event.ID) ||
-					(i < len(c.Divisions)-1 && j.Assignments[i+1].Event != nil &&
-						j.Assignments[i+1].Event.ID == a.Event.ID) {
-					j.Assignments[i] = a
-					continue assignments
-				}
-			}
+		assigned := assign(occupied, a, true)
+		if assigned {
+			continue
 		}
 
-		for _, j := range judges {
-			for i := 0; i < len(c.Divisions); i++ {
-				if occupied[i] {
-					continue
-				}
-				if j.Assignments[i].Event == nil {
-					j.Assignments[i] = a
-					continue assignments
-				}
-			}
+		assigned = assign(occupied, a, false)
+		if assigned {
+			continue
 		}
 
 		leftover = append(leftover, a)
@@ -124,26 +132,29 @@ assignments:
 			"there are %v leftover student requests that could not "+
 				"be assigned without conflicts", len(leftover),
 		))
-	}
-
-	for i := 0; i < len(c.Divisions); i++ {
-		contains := map[string]bool{}
-		for _, j := range judges {
-			if i >= len(j.Assignments) {
-				continue
-			}
-			for _, s := range j.Assignments[i].Group {
-				if !contains[s.Email] {
-					contains[s.Email] = true
-					continue
-				}
-				Warn(fmt.Sprintf(
-					"there is a conflict involving %v on division %v",
-					s.FirstName, i,
-				))
-			}
+		for _, s := range leftover {
+			log.Println(s)
 		}
 	}
+
+	// for i := 0; i < len(c.Divisions); i++ {
+	// 	contains := map[string]bool{}
+	// 	for _, j := range judges {
+	// 		if i >= len(j.Assignments) {
+	// 			continue
+	// 		}
+	// 		for _, s := range j.Assignments[i].Group {
+	// 			if !contains[s.Email] {
+	// 				contains[s.Email] = true
+	// 				continue
+	// 			}
+	// 			Warn(fmt.Sprintf(
+	// 				"there is a conflict involving %v on division %v",
+	// 				s.Firstname, i,
+	// 			))
+	// 		}
+	// 	}
+	// }
 
 	//try and spread out judges evenly throughout the rooms
 	roomSize := int(math.Ceil(float64(len(judges)) / float64(len(c.Rooms))))

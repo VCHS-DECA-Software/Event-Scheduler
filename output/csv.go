@@ -27,10 +27,18 @@ func CSV(f io.Writer, output scheduler.Output) error {
 	judges := []string{"Timeslots"}
 	for _, h := range output.Housings {
 		for _, j := range h.Judges {
+			accepted := j.Judge.Judgeable
+			if len(accepted) == 0 {
+				for _, e := range output.Context.Events {
+					accepted = append(accepted, e.Id)
+				}
+			}
 			judges = append(
 				judges, fmt.Sprintf(
-					"%v %v", j.Judge.FirstName,
-					j.Judge.LastName,
+					"%v %v %v",
+					j.Judge.Firstname,
+					j.Judge.Lastname,
+					accepted,
 				),
 			)
 		}
@@ -62,8 +70,8 @@ func CSV(f io.Writer, output scheduler.Output) error {
 				for _, s := range j.Assignments[i].Group {
 					names = append(names, fmt.Sprintf(
 						"%v %v",
-						s.FirstName,
-						s.LastName,
+						s.Firstname,
+						s.Lastname,
 					))
 				}
 				if j.Assignments[i].Event == nil {
@@ -73,7 +81,7 @@ func CSV(f io.Writer, output scheduler.Output) error {
 				row = append(row, fmt.Sprintf(
 					"%v - %v",
 					strings.Join(names, ", "),
-					j.Assignments[i].Event.ID,
+					j.Assignments[i].Event.Id,
 				))
 			}
 		}

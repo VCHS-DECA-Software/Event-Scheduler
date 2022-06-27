@@ -3,7 +3,8 @@ package main
 import (
 	"Event-Scheduler/output"
 	"Event-Scheduler/scheduler"
-	"log"
+	"flag"
+	"math"
 	"os"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -12,23 +13,38 @@ import (
 func main() {
 	gofakeit.Seed(0)
 
-	c := FakeContext(ContextOptions{
-		Students:      100,
-		Judges:        25,
-		Rooms:         5,
-		TimeDivisions: 6,
-		//* uncomment this for a more comprehendible result
-		// Students:      10,
-		// Judges:        3,
-		// Rooms:         1,
-		// TimeDivisions: 5,
+	students := flag.Int("students", 100, "the number of students to generate")
+	judges := flag.Int("judges", 25, "the number of judges to generate")
+	rooms := flag.Int("rooms", 5, "the number of rooms to generate")
+	divisions := flag.Int("divisions", 6, "the number of time slots to use")
 
-		Events:        10,
-		GroupCapacity: 3,
+	events := flag.Int("events", 4, "the number of different events to generate")
+	groupCapacity := flag.Int("group-capacity", 3, "the maximum capacity of a group")
+	judgeTalent := flag.Int("judge-talent", -1, "the maximum number of different events a given judge can judge")
+
+	maxJudgeTalent := int(math.Ceil(float64(*events) / float64(*judges)))
+	if *judgeTalent > 0 {
+		maxJudgeTalent = int(*judgeTalent)
+	}
+
+	minEvents := flag.Int("min-events", 1, "the minimum number of events a student will join")
+	maxEvents := flag.Int("max-events", 3, "the maximum number of events a student will join")
+
+	flag.Parse()
+
+	c := FakeContext(ContextOptions{
+		Students:      *students,
+		Judges:        *judges,
+		Rooms:         *rooms,
+		TimeDivisions: *divisions,
+
+		Events:         *events,
+		GroupCapacity:  *groupCapacity,
+		MaxJudgeTalent: maxJudgeTalent,
 	})
 	requests := FakeRequests(c, RequestOptions{
-		MinimumEvents: 1,
-		MaximumEvents: 3,
+		MinimumEvents: *minEvents,
+		MaximumEvents: *maxEvents,
 		SoloRatio:     0.2,
 	})
 
@@ -38,14 +54,14 @@ func main() {
 	if err == os.ErrExist {
 		f, err = os.Open("output.csv")
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	} else if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	err = output.CSV(f, o)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }

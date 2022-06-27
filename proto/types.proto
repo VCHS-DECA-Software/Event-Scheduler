@@ -3,21 +3,22 @@ syntax = "proto3";
 option go_package = "components/proto";
 
 message Room {
-	string Name = 1;
+	string name = 1;
 }
 
 message Event {
-	string ID = 1;
+	string id = 1;
 }
 
 message Judge {
-	string Email = 1;
-	string FirstName = 2;
-	string LastName = 3;
+	string email = 1;
+	string firstname = 2;
+	string lastname = 3;
+	repeated string judgeable = 4;
 }
 
 message Student {
-	string Email = 1;
-	string FirstName = 2;
-	string LastName = 3;
+	string email = 1;
+	string firstname = 2;
+	string lastname = 3;
 }

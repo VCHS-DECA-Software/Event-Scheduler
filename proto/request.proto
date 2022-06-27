@@ -12,8 +12,7 @@ message Time {
 }
 
 message Constraints {
-    int32 judgeStudents = 1;
-    int32 groupSize = 2;
+    int32 groupSize = 1;
 }
 
 //requests

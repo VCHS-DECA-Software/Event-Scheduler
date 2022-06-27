@@ -18,8 +18,9 @@ type ContextOptions struct {
 	Rooms         int
 	TimeDivisions int
 
-	Events        int
-	GroupCapacity int
+	Events         int
+	GroupCapacity  int
+	MaxJudgeTalent int
 }
 
 func FakeContext(config ContextOptions) scheduler.ScheduleContext {
@@ -28,21 +29,39 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 		divisions = append(divisions, 30)
 	}
 
+	events := []*proto.Event{}
+	for i := 0; i < config.Events; i++ {
+		events = append(events, &proto.Event{
+			Id: strings.ToUpper(gofakeit.LetterN(3)),
+		})
+	}
+
 	students := []*proto.Student{}
 	for i := 0; i < config.Students; i++ {
 		students = append(students, &proto.Student{
 			Email:     gofakeit.Email(),
-			FirstName: gofakeit.FirstName(),
-			LastName:  gofakeit.LastName(),
+			Firstname: gofakeit.FirstName(),
+			Lastname:  gofakeit.LastName(),
 		})
 	}
 
 	judges := []*proto.Judge{}
 	for i := 0; i < config.Judges; i++ {
+		number := rand.Intn(int(config.MaxJudgeTalent))
+		if number == 0 {
+			number = 1
+		}
+
+		judgeable := []string{}
+		for _, e := range common.SelectRandom(events, int(number)) {
+			judgeable = append(judgeable, e.Id)
+		}
+
 		judges = append(judges, &proto.Judge{
 			Email:     gofakeit.Email(),
-			FirstName: gofakeit.FirstName(),
-			LastName:  gofakeit.LastName(),
+			Firstname: gofakeit.FirstName(),
+			Lastname:  gofakeit.LastName(),
+			Judgeable: judgeable,
 		})
 	}
 
@@ -56,21 +75,13 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 		})
 	}
 
-	events := []*proto.Event{}
-	for i := 0; i < config.Events; i++ {
-		events = append(events, &proto.Event{
-			ID: strings.ToUpper(gofakeit.LetterN(3)),
-		})
-	}
-
 	return scheduler.NewContext(
 		&proto.Time{
 			Start:     time.Date(2022, time.January, 1, 12, 0, 0, 0, time.Local).Unix(),
 			Divisions: divisions,
 		},
 		&proto.Constraints{
-			JudgeStudents: int32(config.TimeDivisions),
-			GroupSize:     int32(config.GroupCapacity),
+			GroupSize: int32(config.GroupCapacity),
 		},
 		&proto.Registration{
 			Students: students,
@@ -99,17 +110,16 @@ func FakeRequests(c scheduler.ScheduleContext, o RequestOptions) []*proto.Studen
 		)
 		events := common.SelectRandom(eventPool, amount)
 
-		group := []string{studentID}
-		solo := rand.Float64() < o.SoloRatio
-		if !solo {
-			number := rand.Intn(int(c.GroupSize))
-			partners := common.SelectRandom(
-				common.Without(studentPool, studentID), number,
-			)
-			group = append(group, partners...)
-		}
-
 		for _, e := range events {
+			group := []string{studentID}
+			solo := rand.Float64() < o.SoloRatio
+			if !solo {
+				number := rand.Intn(int(c.GroupSize))
+				partners := common.SelectRandom(
+					common.Without(studentPool, studentID), number,
+				)
+				group = append(group, partners...)
+			}
 			requests = append(requests, &proto.StudentRequest{
 				Event: e,
 				Group: group,

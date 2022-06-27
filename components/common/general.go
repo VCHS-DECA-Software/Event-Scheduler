@@ -1,7 +1,6 @@
 package common
 
 import (
-	"log"
 	"math/rand"
 )
 
@@ -17,7 +16,7 @@ func SelectRandom[T any](list []T, amount int) []T {
 	pool := make([]T, len(list))
 	copy(pool, list)
 	if amount > len(pool) {
-		log.Fatal("SelectRandom cannot choose more than the slice has to offer!")
+		panic("SelectRandom cannot choose more than the slice has to offer!")
 	}
 	values := []T{}
 	for i := 0; i < amount; i++ {

@@ -4,6 +4,7 @@ option go_package = "components/proto";
 
 message Room {
 	string name = 1;
+	int32 judgeCapacity = 2;
 }
 
 message Event {

@@ -4,7 +4,6 @@ import (
 	"Event-Scheduler/output"
 	"Event-Scheduler/scheduler"
 	"flag"
-	"math"
 	"os"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -13,22 +12,18 @@ import (
 func main() {
 	gofakeit.Seed(0)
 
-	students := flag.Int("students", 100, "the number of students to generate")
+	students := flag.Int("students", 95, "the number of students to generate")
 	judges := flag.Int("judges", 25, "the number of judges to generate")
 	rooms := flag.Int("rooms", 5, "the number of rooms to generate")
 	divisions := flag.Int("divisions", 6, "the number of time slots to use")
 
 	events := flag.Int("events", 4, "the number of different events to generate")
+	roomCapacity := flag.Int("room-capacity", 4, "the maximum judges a room can hold")
 	groupCapacity := flag.Int("group-capacity", 3, "the maximum capacity of a group")
-	judgeTalent := flag.Int("judge-talent", -1, "the maximum number of different events a given judge can judge")
-
-	maxJudgeTalent := int(math.Ceil(float64(*events) / float64(*judges)))
-	if *judgeTalent > 0 {
-		maxJudgeTalent = int(*judgeTalent)
-	}
+	judgeTalent := flag.Int("judge-talent", 1, "the maximum number of different events a given judge can judge")
 
 	minEvents := flag.Int("min-events", 1, "the minimum number of events a student will join")
-	maxEvents := flag.Int("max-events", 3, "the maximum number of events a student will join")
+	maxEvents := flag.Int("max-events", 2, "the maximum number of events a student will join")
 
 	flag.Parse()
 
@@ -40,7 +35,8 @@ func main() {
 
 		Events:         *events,
 		GroupCapacity:  *groupCapacity,
-		MaxJudgeTalent: maxJudgeTalent,
+		RoomCapacity:   *roomCapacity,
+		MaxJudgeTalent: *judgeTalent,
 	})
 	requests := FakeRequests(c, RequestOptions{
 		MinimumEvents: *minEvents,
@@ -51,12 +47,7 @@ func main() {
 	o := scheduler.Schedule(c, requests)
 
 	f, err := os.Create("output.csv")
-	if err == os.ErrExist {
-		f, err = os.Open("output.csv")
-		if err != nil {
-			panic(err)
-		}
-	} else if err != nil {
+	if err != nil {
 		panic(err)
 	}
 

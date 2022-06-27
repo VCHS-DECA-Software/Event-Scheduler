@@ -109,4 +109,6 @@ $RECYCLE.BIN/
 tests/db/*.db
 
 # Project specific blacklist
-cmd/fake/*.csv
+cmd/fake/output.csv
+cmd/real/output.csv
+*.log

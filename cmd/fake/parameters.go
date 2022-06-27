@@ -20,6 +20,7 @@ type ContextOptions struct {
 
 	Events         int
 	GroupCapacity  int
+	RoomCapacity   int
 	MaxJudgeTalent int
 }
 
@@ -72,6 +73,7 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 				"%v%d", strings.ToUpper(gofakeit.Letter()),
 				gofakeit.Number(100, 999),
 			),
+			JudgeCapacity: int32(config.RoomCapacity),
 		})
 	}
 

@@ -5,7 +5,6 @@ import (
 	"Event-Scheduler/components/proto"
 	"fmt"
 	"log"
-	"math"
 )
 
 func Warn(message string) {
@@ -40,6 +39,9 @@ func NewContext(
 		context.Students[s.Email] = s
 	}
 	for _, j := range r.Judges {
+		if len(j.Email) == 0 {
+			j.Email = fmt.Sprintf("%v.%v", j.Firstname, j.Lastname)
+		}
 		context.Judges[j.Email] = j
 	}
 	for _, e := range r.Events {
@@ -54,11 +56,22 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 	for _, r := range requests {
 		group := []*proto.Student{}
 		for _, student := range r.Group {
-			group = append(group, c.Students[student])
+			s, ok := c.Students[student]
+			if !ok {
+				log.Printf("[WARN] group's partner (%v) does not exist, skipping...", student)
+				continue
+			}
+			group = append(group, s)
+		}
+
+		event, ok := c.Events[r.Event]
+		if !ok {
+			log.Printf("[WARN] assignment's target event (%v) does not exist, skipping...\n", r.Event)
+			continue
 		}
 		assignments = append(assignments, Assignment{
 			Group: group,
-			Event: c.Events[r.Event],
+			Event: event,
 		})
 	}
 
@@ -137,6 +150,7 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 		}
 	}
 
+	//! DEBUG: conflict checking
 	// for i := 0; i < len(c.Divisions); i++ {
 	// 	contains := map[string]bool{}
 	// 	for _, j := range judges {
@@ -157,21 +171,15 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 	// }
 
 	//try and spread out judges evenly throughout the rooms
-	roomSize := int(math.Ceil(float64(len(judges)) / float64(len(c.Rooms))))
 	housings := []Housing{}
+	offset := 0
 	for i := 0; i < len(c.Rooms); i++ {
-		start := i * roomSize
-		if start < 0 {
-			start = 0
-		}
-		end := (i + 1) * roomSize
-		if end > len(judges) {
-			end = len(judges)
-		}
+		capacity := int(c.Rooms[i].JudgeCapacity)
 		housings = append(housings, Housing{
 			Room:   c.Rooms[i],
-			Judges: judges[start:end],
+			Judges: judges[offset : offset+capacity],
 		})
+		offset += capacity
 	}
 
 	return Output{

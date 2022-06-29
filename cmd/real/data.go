@@ -189,4 +189,12 @@ var events = []*proto.Event{
 	{Id: "HTOR"},
 	{Id: "FOR"},
 	{Id: "SEOR"},
+
+	{Id: "EW"},
+	{Id: "IM"},
+	{Id: "HR"},
+	{Id: "HSW"},
+
+	{Id: "FS"},
+	{Id: "MS"},
 }

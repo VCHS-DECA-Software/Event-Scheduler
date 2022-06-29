@@ -1,6 +1,6 @@
 ### scheduling
 
-*this scheduling architecture was written by someone who has never done a lick of scheduling outside of a science fair project, if you have a better implementation, feel free to step right up*
+*this scheduling algorithm was written by someone who has never done a lick of scheduling, if you have a better implementation, feel free to step right up*
 
 #### inputs
 
@@ -24,6 +24,12 @@
 the algorithm of the scheduler works bottom to top (from the most granular decisions to the larger ones)
 
 1. parse the `student requests` into `assignments`.
+1. leave the judges with the most flexibility for last
+    1. this is done to ensure that a request that could be handled by a judge with less flexibility does not get delegated to one of more flexibility, as the one with more flexibility is able to handle more requests
+    1. implementation: sort judges least to greatest based on the length of their event restriction
+1. prioritize requests with the most members in their group
+    1. this is done to minimize conflicts due to people being in different places at the same time
+    1. implementation: sort requests greatest to least based on the length of their group
 1. assign requests to judges based on a few rules
     1. get the divisions of time that are "occupied" by an existing request
         - here, "occupied" means another request in the same time division that shares some students with the current request's group

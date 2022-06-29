@@ -5,10 +5,30 @@ import (
 	"Event-Scheduler/components/proto"
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 )
+
+func Info(message string) {
+	log.Printf("[INFO] %v\n", message)
+}
 
 func Warn(message string) {
 	log.Printf("[WARN] %v\n", message)
+}
+
+func FormatEvent(event *proto.Event) string {
+	return fmt.Sprintf("\"%v\"", event.Id)
+}
+
+func FormatGroup(group []*proto.Student) string {
+	groupText := []string{}
+	for _, s := range group {
+		groupText = append(groupText, fmt.Sprintf(
+			"%v %v", s.Firstname, s.Lastname,
+		))
+	}
+	return fmt.Sprintf("[%v]", strings.Join(groupText, ", "))
 }
 
 type ScheduleContext struct {
@@ -53,12 +73,16 @@ func NewContext(
 
 func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 	assignments := []Assignment{}
+assignments:
 	for _, r := range requests {
 		group := []*proto.Student{}
 		for _, student := range r.Group {
 			s, ok := c.Students[student]
 			if !ok {
-				log.Printf("[WARN] group's partner (%v) does not exist, skipping...", student)
+				Info(fmt.Sprintf(
+					"group's partner (%v) does not exist, skipping...",
+					student,
+				))
 				continue
 			}
 			group = append(group, s)
@@ -66,14 +90,33 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 
 		event, ok := c.Events[r.Event]
 		if !ok {
-			log.Printf("[WARN] assignment's target event (%v) does not exist, skipping...\n", r.Event)
+			Info(fmt.Sprintf(
+				"assignment's target event (%v) does not exist, skipping...\n",
+				r.Event,
+			))
 			continue
 		}
+
+		for _, a := range assignments {
+			if common.UnorderedEqual(a.Group, group) && a.Event == event {
+				Info(fmt.Sprintf(
+					"duplicate student requests (%v - %v) skipping...",
+					FormatEvent(event), FormatGroup(a.Group),
+				))
+				continue assignments
+			}
+		}
+
 		assignments = append(assignments, Assignment{
 			Group: group,
 			Event: event,
 		})
 	}
+
+	//sort requests from the largest group to the smallest group
+	sort.SliceStable(assignments, func(i, j int) bool {
+		return len(assignments[i].Group) > len(assignments[j].Group)
+	})
 
 	//initialize judge structs
 	judges := []*Judgement{}
@@ -83,6 +126,11 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 			Assignments: make([]Assignment, len(c.Divisions)),
 		})
 	}
+
+	//sort judges from the least flexible to the most flexible
+	sort.SliceStable(judges, func(i, j int) bool {
+		return len(judges[i].Judge.Judgeable) < len(judges[j].Judge.Judgeable)
+	})
 
 	assign := func(occupied map[int]bool, a Assignment, withAdjacent bool) bool {
 		for _, j := range judges {
@@ -97,16 +145,28 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 				if j.Assignments[i].Event != nil {
 					continue
 				}
+				if common.HasAdjacent(j.Assignments, i, func(adj Assignment) bool {
+					intersects := common.Intersects(adj.Group, a.Group)
+					if intersects {
+						Info(fmt.Sprintf(
+							"back to back group intersection (%v, %v), skipping...",
+							FormatGroup(adj.Group), FormatGroup(a.Group),
+						))
+					}
+					return intersects
+				}) {
+					continue
+				}
 				if withAdjacent {
 					//checks if there is an (vertically) adjacent
 					//assignment with the same event
-					if (i > 0 && j.Assignments[i-1].Event != nil &&
-						j.Assignments[i-1].Event.Id == a.Event.Id) ||
-						(i < len(c.Divisions)-1 && j.Assignments[i+1].Event != nil &&
-							j.Assignments[i+1].Event.Id == a.Event.Id) {
+					if common.HasAdjacent(j.Assignments, i, func(adj Assignment) bool {
+						return adj.Event != nil && adj.Event.Id == a.Event.Id
+					}) {
 						j.Assignments[i] = a
 						return true
 					}
+					return false
 				}
 				j.Assignments[i] = a
 				return true
@@ -146,7 +206,7 @@ func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
 				"be assigned without conflicts", len(leftover),
 		))
 		for _, s := range leftover {
-			log.Println(s)
+			log.Println(FormatEvent(s.Event), FormatGroup(s.Group))
 		}
 	}
 

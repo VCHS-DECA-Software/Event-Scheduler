@@ -28,14 +28,15 @@ func SelectRandom[T any](list []T, amount int) []T {
 }
 
 func Without[T comparable](list []T, element T) []T {
+	new := []T{}
 	pool := make([]T, len(list))
 	copy(pool, list)
-	for i, e := range pool {
-		if e == element {
-			return append(pool[0:i], pool[i+1:]...)
+	for _, e := range pool {
+		if e != element {
+			new = append(new, e)
 		}
 	}
-	return pool
+	return new
 }
 
 func Intersects[T comparable](l1 []T, l2 []T) bool {
@@ -45,6 +46,40 @@ func Intersects[T comparable](l1 []T, l2 []T) bool {
 	}
 	for _, e := range l2 {
 		if pool[e] {
+			return true
+		}
+	}
+	return false
+}
+
+//compares two lists if they are equal regardless of order
+func UnorderedEqual[T comparable](l1 []T, l2 []T) bool {
+	if len(l1) != len(l2) {
+		return false
+	}
+
+	m := map[T]bool{}
+	for _, v := range l1 {
+		m[v] = true
+	}
+
+	for _, v := range l2 {
+		if !m[v] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func HasAdjacent[T any](l []T, index int, determiner func(T) bool) bool {
+	if index > 0 {
+		if determiner(l[index-1]) {
+			return true
+		}
+	}
+	if index < len(l)-1 {
+		if determiner(l[index+1]) {
 			return true
 		}
 	}

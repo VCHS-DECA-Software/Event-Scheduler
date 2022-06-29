@@ -48,7 +48,7 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 
 	judges := []*proto.Judge{}
 	for i := 0; i < config.Judges; i++ {
-		number := rand.Intn(int(config.MaxJudgeTalent))
+		number := rand.Intn(config.MaxJudgeTalent + 1)
 		if number == 0 {
 			number = 1
 		}
@@ -108,7 +108,7 @@ func FakeRequests(c scheduler.ScheduleContext, o RequestOptions) []*proto.Studen
 
 	for _, studentID := range studentPool {
 		amount := o.MinimumEvents + rand.Intn(
-			o.MaximumEvents-o.MinimumEvents,
+			o.MaximumEvents-o.MinimumEvents+1,
 		)
 		events := common.SelectRandom(eventPool, amount)
 
@@ -116,7 +116,7 @@ func FakeRequests(c scheduler.ScheduleContext, o RequestOptions) []*proto.Studen
 			group := []string{studentID}
 			solo := rand.Float64() < o.SoloRatio
 			if !solo {
-				number := rand.Intn(int(c.GroupSize))
+				number := rand.Intn(int(c.GroupSize) + 1)
 				partners := common.SelectRandom(
 					common.Without(studentPool, studentID), number,
 				)

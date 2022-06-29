@@ -12,7 +12,7 @@ import (
 func main() {
 	gofakeit.Seed(0)
 
-	students := flag.Int("students", 95, "the number of students to generate")
+	students := flag.Int("students", 100, "the number of students to generate")
 	judges := flag.Int("judges", 25, "the number of judges to generate")
 	rooms := flag.Int("rooms", 5, "the number of rooms to generate")
 	divisions := flag.Int("divisions", 6, "the number of time slots to use")
@@ -20,7 +20,7 @@ func main() {
 	events := flag.Int("events", 4, "the number of different events to generate")
 	roomCapacity := flag.Int("room-capacity", 4, "the maximum judges a room can hold")
 	groupCapacity := flag.Int("group-capacity", 3, "the maximum capacity of a group")
-	judgeTalent := flag.Int("judge-talent", 1, "the maximum number of different events a given judge can judge")
+	judgeTalent := flag.Int("judge-talent", 2, "the maximum number of different events a given judge can judge")
 
 	minEvents := flag.Int("min-events", 1, "the minimum number of events a student will join")
 	maxEvents := flag.Int("max-events", 2, "the maximum number of events a student will join")

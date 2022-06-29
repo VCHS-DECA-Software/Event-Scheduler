@@ -7,3 +7,7 @@ rpc:
 		--go_out=. \
 		--go-grpc_out=. \
 		$(PROTO)
+
+test:
+	cd tests/components && \
+		cd common && go test

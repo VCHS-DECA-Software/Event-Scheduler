@@ -5,13 +5,12 @@ import (
 	"Event-Scheduler/output"
 	"Event-Scheduler/scheduler"
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 var parenthesis = regexp.MustCompile(`\(.+\)`)
@@ -36,20 +35,19 @@ func splitName(combined string) (string, string) {
 	return normalized[0], normalized[1]
 }
 
-func findStudent(pool []*proto.Student, first, last string) *proto.Student {
-	var mostLikely *proto.Student
-	minFirst := 9999
-	minLast := 9999
+func findStudent(pool []*proto.Student, first, last string) (*proto.Student, bool) {
+	first = strings.ToLower(first)
+	last = strings.ToLower(last)
 	for _, s := range pool {
-		firstnameDifference := fuzzy.LevenshteinDistance(s.Firstname, first)
-		lastnameDifference := fuzzy.LevenshteinDistance(s.Lastname, last)
-		if firstnameDifference < minFirst && lastnameDifference < minLast {
-			minFirst = firstnameDifference
-			minLast = lastnameDifference
-			mostLikely = s
+		if first == strings.ToLower(s.Firstname) && last == strings.ToLower(s.Lastname) {
+			return s, false
 		}
 	}
-	return mostLikely
+	return &proto.Student{
+		Email:     fmt.Sprintf("%v.%v@warriorlife.net", first, last),
+		Firstname: first,
+		Lastname:  last,
+	}, true
 }
 
 func main() {
@@ -81,7 +79,6 @@ func main() {
 
 		for _, s := range students {
 			if s.Email == email {
-				log.Println("duplicate student", firstname, lastname)
 				continue
 			}
 		}
@@ -105,16 +102,19 @@ func main() {
 			}
 		}
 
-		log.Println("-----------------------", students[i].Firstname, students[i].Lastname)
 		group := []string{students[i].Email}
 		for _, name := range partners {
 			first, last := splitName(name)
-			s := findStudent(students, first, last)
-			if s == nil {
-				log.Printf("could not find student of name %v", name)
+			s, new := findStudent(students, first, last)
+			if new {
+				scheduler.Info(fmt.Sprintf(
+					"couldn't find a student by the name \"%v\", "+
+						"automatically adding it to the student list...",
+					name,
+				))
+				students = append(students, s)
 				continue
 			}
-			log.Println(first, last, s.Email)
 			group = append(group, s.Email)
 		}
 
@@ -157,7 +157,7 @@ func main() {
 
 	log.Println("==================================")
 	log.Printf(
-		"[STAT] scheduling with %v students, %v requests, and %v judges\n",
+		"[INFO] scheduling with %v students, %v requests, and %v judges\n",
 		len(students), len(requests), len(judges),
 	)
 

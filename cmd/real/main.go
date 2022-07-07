@@ -182,7 +182,7 @@ func main() {
 	}
 
 	divisions := []int64{}
-	for _, row := range conferenceDf.Select([]string{"Time Slots"}).Records()[1:] {
+	for _, row := range conferenceDf.Select([]string{"Time Slot"}).Records()[1:] {
 		slot, err := strconv.ParseInt(row[0], 10, 64)
 		if err != nil {
 			panic(err)

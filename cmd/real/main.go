@@ -5,12 +5,17 @@ import (
 	"Event-Scheduler/output"
 	"Event-Scheduler/scheduler"
 	"encoding/csv"
+	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-gota/gota/dataframe"
 )
 
 var parenthesis = regexp.MustCompile(`\(.+\)`)
@@ -52,13 +57,22 @@ func findStudent(pool []*proto.Student, first, last string) (*proto.Student, boo
 
 func main() {
 	f, err := os.Create("output.log")
-	defer f.Close()
+
 	if err != nil {
 		panic(err)
 	}
+
+	defer f.Close()
+
 	log.SetOutput(f)
 
-	f, err = os.Open("real_data.csv")
+	studentRegistrationFilePtr := flag.String("student", "", "student registration file")
+	judgeRegistrationFilePtr := flag.String("judge", "", "judge registration file")
+	conferenceFilePtr := flag.String("conference", "", "conference details file")
+
+	flag.Parse()
+
+	f, err = os.Open(*studentRegistrationFilePtr)
 	if err != nil {
 		panic(err)
 	}
@@ -133,25 +147,88 @@ func main() {
 		log.Println(r.Event, r.Group)
 	}
 
+	jFile, err := os.Open(*judgeRegistrationFilePtr)
+	if err != nil {
+		panic(err)
+	}
+
+	cFile, err := os.Open(*conferenceFilePtr)
+	if err != nil {
+		panic(err)
+	}
+
+	var jReader io.Reader = jFile
+	var cReader io.Reader = cFile
+
+	judgeDf := dataframe.ReadCSV(jReader)
+	conferenceDf := dataframe.ReadCSV(cReader)
+
+	judges := []*proto.Judge{}
+
+	for _, row := range judgeDf.Records()[1:] {
+		eventsTrimmed := strings.TrimSpace(row[2])
+		events := strings.Split(eventsTrimmed, ",")
+		judges = append(judges, &proto.Judge{
+			Firstname: row[0],
+			Lastname:  row[1],
+			Judgeable: events,
+		})
+	}
+
+	conferenceStartTime, err := time.Parse("01/02/2006 15:04", conferenceDf.Select([]string{"Start Time"}).Records()[1][0])
+
+	if err != nil {
+		panic(err)
+	}
+
+	divisions := []int64{}
+	for _, row := range conferenceDf.Select([]string{"Time Slots"}).Records()[1:] {
+		slot, err := strconv.ParseInt(row[0], 10, 64)
+		if err != nil {
+			panic(err)
+		}
+
+		divisions = append(divisions, slot)
+	}
+
+	rooms := []*proto.Room{}
+	for _, row := range conferenceDf.Select([]string{"Room", "Judge Capacity"}).Records()[1:] {
+		capacity, err := strconv.ParseInt(row[1], 10, 32)
+		if err != nil {
+			capacity = 0
+		}
+		rooms = append(rooms, &proto.Room{
+			Name:          row[0],
+			JudgeCapacity: int32(capacity),
+		})
+	}
+
+	events := []*proto.Event{}
+	for _, row := range conferenceDf.Select([]string{"Event"}).Records()[1:] {
+		events = append(events, &proto.Event{
+			Id: row[0],
+		})
+	}
+
+	groupsizeStr := conferenceDf.Select([]string{"Group Size"}).Records()[1][0]
+	groupsize, err := strconv.ParseInt(groupsizeStr, 10, 32)
+	if err != nil {
+		panic(err)
+	}
+
 	c := scheduler.NewContext(
 		&proto.Time{
-			Start:     time.Date(2022, time.January, 1, 12, 0, 0, 0, time.Local).Unix(),
-			Divisions: []int64{30, 30, 30, 30, 30, 30},
+			Start:    conferenceStartTime.Unix(),
+			Divisions: divisions,
 		},
 		&proto.Constraints{
-			GroupSize: 3,
+			GroupSize: int32(groupsize),
 		},
 		&proto.Registration{
 			Students: students,
 			Judges:   judges,
-			Rooms: []*proto.Room{
-				{Name: "C410", JudgeCapacity: 3},
-				{Name: "C415", JudgeCapacity: 3},
-				{Name: "C307", JudgeCapacity: 5},
-				{Name: "C309", JudgeCapacity: 5},
-				{Name: "Conservatory Hall", JudgeCapacity: 9},
-			},
-			Events: events,
+			Rooms:    rooms,
+			Events:   events,
 		},
 	)
 

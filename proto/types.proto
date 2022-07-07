@@ -12,7 +12,7 @@ message Event {
 }
 
 message Judge {
-	string email = 1;
+	int32 number = 1;
 	string firstname = 2;
 	string lastname = 3;
 	repeated string judgeable = 4;

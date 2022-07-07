@@ -66,9 +66,9 @@ func main() {
 
 	log.SetOutput(f)
 
-	studentRegistrationFilePtr := flag.String("student", "", "student registration file")
-	judgeRegistrationFilePtr := flag.String("judge", "", "judge registration file")
-	conferenceFilePtr := flag.String("conference", "", "conference details file")
+	studentRegistrationFilePtr := flag.String("student", "students.csv", "student registration file")
+	judgeRegistrationFilePtr := flag.String("judge", "judges.csv", "judge registration file")
+	conferenceFilePtr := flag.String("conference", "conference.csv", "conference details file")
 
 	flag.Parse()
 
@@ -86,6 +86,7 @@ func main() {
 
 	lines = lines[1:]
 
+	//* parse students
 	students := []*proto.Student{}
 	for _, l := range lines {
 		email := l[0]
@@ -104,6 +105,7 @@ func main() {
 		})
 	}
 
+	//* parse requests
 	requests := []*proto.StudentRequest{}
 	for i, l := range lines {
 		event := strings.Split(l[3], " ")[0]
@@ -147,6 +149,7 @@ func main() {
 		log.Println(r.Event, r.Group)
 	}
 
+	//* parse judges and conference data
 	jFile, err := os.Open(*judgeRegistrationFilePtr)
 	if err != nil {
 		panic(err)
@@ -164,30 +167,35 @@ func main() {
 	conferenceDf := dataframe.ReadCSV(cReader)
 
 	judges := []*proto.Judge{}
-
-	for _, row := range judgeDf.Records()[1:] {
+	for i, row := range judgeDf.Records()[1:] {
 		eventsTrimmed := strings.TrimSpace(row[2])
 		events := strings.Split(eventsTrimmed, ",")
 		judges = append(judges, &proto.Judge{
+			Number:    int32(i),
 			Firstname: row[0],
 			Lastname:  row[1],
 			Judgeable: events,
 		})
 	}
 
-	conferenceStartTime, err := time.Parse("01/02/2006 15:04", conferenceDf.Select([]string{"Start Time"}).Records()[1][0])
-
+	startTime, err := time.Parse(
+		"01/02/2006 15:04",
+		conferenceDf.Select([]string{"Start Time"}).Records()[1][0],
+	)
 	if err != nil {
 		panic(err)
 	}
 
 	divisions := []int64{}
 	for _, row := range conferenceDf.Select([]string{"Time Slot"}).Records()[1:] {
+		if row[0] == "NaN" {
+			continue
+		}
+
 		slot, err := strconv.ParseInt(row[0], 10, 64)
 		if err != nil {
 			panic(err)
 		}
-
 		divisions = append(divisions, slot)
 	}
 
@@ -210,19 +218,19 @@ func main() {
 		})
 	}
 
-	groupsizeStr := conferenceDf.Select([]string{"Group Size"}).Records()[1][0]
-	groupsize, err := strconv.ParseInt(groupsizeStr, 10, 32)
+	groupSizeStr := conferenceDf.Select([]string{"Group Size"}).Records()[1][0]
+	groupSize, err := strconv.ParseInt(groupSizeStr, 10, 32)
 	if err != nil {
 		panic(err)
 	}
 
 	c := scheduler.NewContext(
 		&proto.Time{
-			Start:    conferenceStartTime.Unix(),
+			Start:     startTime.Unix(),
 			Divisions: divisions,
 		},
 		&proto.Constraints{
-			GroupSize: int32(groupsize),
+			GroupSize: int32(groupSize),
 		},
 		&proto.Registration{
 			Students: students,

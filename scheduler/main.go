@@ -36,7 +36,7 @@ type ScheduleContext struct {
 	*proto.Constraints
 
 	Students map[string]*proto.Student
-	Judges   map[string]*proto.Judge
+	Judges   map[int]*proto.Judge
 	Events   map[string]*proto.Event
 	Rooms    []*proto.Room
 }
@@ -50,7 +50,7 @@ func NewContext(
 		Time:        t,
 		Constraints: c,
 		Students:    map[string]*proto.Student{},
-		Judges:      map[string]*proto.Judge{},
+		Judges:      map[int]*proto.Judge{},
 		Events:      map[string]*proto.Event{},
 		Rooms:       r.Rooms,
 	}
@@ -59,10 +59,7 @@ func NewContext(
 		context.Students[s.Email] = s
 	}
 	for _, j := range r.Judges {
-		if len(j.Email) == 0 {
-			j.Email = fmt.Sprintf("%v.%v", j.Firstname, j.Lastname)
-		}
-		context.Judges[j.Email] = j
+		context.Judges[int(j.Number)] = j
 	}
 	for _, e := range r.Events {
 		context.Events[e.Id] = e

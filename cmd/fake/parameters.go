@@ -59,7 +59,7 @@ func FakeContext(config ContextOptions) scheduler.ScheduleContext {
 		}
 
 		judges = append(judges, &proto.Judge{
-			Email:     gofakeit.Email(),
+			Number:    int32(i),
 			Firstname: gofakeit.FirstName(),
 			Lastname:  gofakeit.LastName(),
 			Judgeable: judgeable,

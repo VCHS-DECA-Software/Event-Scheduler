@@ -6,64 +6,23 @@ import (
 	"Event-Scheduler/scheduler"
 	"encoding/csv"
 	"flag"
-	"fmt"
-	"io"
 	"log"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-gota/gota/dataframe"
 )
 
 var parenthesis = regexp.MustCompile(`\(.+\)`)
 
-func splitName(combined string) (string, string) {
-	without := strings.ReplaceAll(string(
-		parenthesis.ReplaceAll([]byte(combined), []byte("")),
-	), ",", "")
-	parts := strings.Split(without, " ")
-	normalized := []string{}
-	for _, l := range parts {
-		if len(l) > 0 {
-			normalized = append(normalized, l)
-		}
-	}
-	if len(normalized) == 0 {
-		return "", ""
-	}
-	if len(normalized) == 1 {
-		return normalized[0], ""
-	}
-	return normalized[0], normalized[1]
-}
-
-func findStudent(pool []*proto.Student, first, last string) (*proto.Student, bool) {
-	first = strings.ToLower(first)
-	last = strings.ToLower(last)
-	for _, s := range pool {
-		if first == strings.ToLower(s.Firstname) && last == strings.ToLower(s.Lastname) {
-			return s, false
-		}
-	}
-	return &proto.Student{
-		Email:     fmt.Sprintf("%v.%v@warriorlife.net", first, last),
-		Firstname: first,
-		Lastname:  last,
-	}, true
-}
-
 func main() {
+	//* setup
 	f, err := os.Create("output.log")
-
 	if err != nil {
 		panic(err)
 	}
-
 	defer f.Close()
-
 	log.SetOutput(f)
 
 	studentRegistrationFilePtr := flag.String("student", "students.csv", "student registration file")
@@ -72,158 +31,67 @@ func main() {
 
 	flag.Parse()
 
+	//* parse students and student requests
 	f, err = os.Open(*studentRegistrationFilePtr)
 	if err != nil {
 		panic(err)
 	}
-
 	reader := csv.NewReader(f)
-
 	lines, err := reader.ReadAll()
 	if err != nil {
 		panic(err)
 	}
 
 	lines = lines[1:]
+	students := ParseStudents(lines)
+	requests := ParseRequests(lines, students)
 
-	//* parse students
-	students := []*proto.Student{}
-	for _, l := range lines {
-		email := l[0]
-		lastname, firstname := splitName(l[1])
-
-		for _, s := range students {
-			if s.Email == email {
-				continue
-			}
-		}
-
-		students = append(students, &proto.Student{
-			Email:     email,
-			Firstname: firstname,
-			Lastname:  lastname,
-		})
-	}
-
-	//* parse requests
-	requests := []*proto.StudentRequest{}
-	for i, l := range lines {
-		event := strings.Split(l[3], " ")[0]
-
-		partners := []string{}
-		for _, p := range strings.Split(l[2], ",") {
-			trimmed := strings.Trim(p, " ")
-			if len(trimmed) > 0 {
-				partners = append(partners, trimmed)
-			}
-		}
-
-		group := []string{students[i].Email}
-		for _, name := range partners {
-			first, last := splitName(name)
-			s, new := findStudent(students, first, last)
-			if new {
-				scheduler.Info(fmt.Sprintf(
-					"couldn't find a student by the name \"%v\", "+
-						"automatically adding it to the student list...",
-					name,
-				))
-				students = append(students, s)
-				continue
-			}
-			group = append(group, s.Email)
-		}
-
-		requests = append(requests, &proto.StudentRequest{
-			Event: event,
-			Group: group,
-		})
-	}
-
-	log.Println("================================== Students")
+	log.Println("================================== Registered students")
 	for _, s := range students {
 		log.Println(s.Firstname, s.Lastname, s.Email)
 	}
-	log.Println("================================== Requests")
+	log.Println("================================== Registered requests")
 	for _, r := range requests {
 		log.Println(r.Event, r.Group)
 	}
 
 	//* parse judges and conference data
-	jFile, err := os.Open(*judgeRegistrationFilePtr)
+	judgeFile, err := os.Open(*judgeRegistrationFilePtr)
 	if err != nil {
 		panic(err)
 	}
-
-	cFile, err := os.Open(*conferenceFilePtr)
+	conferenceFile, err := os.Open(*conferenceFilePtr)
 	if err != nil {
 		panic(err)
 	}
+	judgeDf := dataframe.ReadCSV(judgeFile)
+	conferenceDf := dataframe.ReadCSV(conferenceFile)
 
-	var jReader io.Reader = jFile
-	var cReader io.Reader = cFile
+	judges := ParseJudges(judgeDf.Records()[1:])
+	rooms := ParseRooms(conferenceDf.Select([]string{"Room", "Judge Capacity"}).Records()[1:])
+	events := ParseEvents(conferenceDf.Select([]string{"Event"}).Records()[1:])
 
-	judgeDf := dataframe.ReadCSV(jReader)
-	conferenceDf := dataframe.ReadCSV(cReader)
+	startTime := ParseTime(conferenceDf.Select([]string{"Start Time"}).Records()[1])
+	divisions := ParseDivisions(conferenceDf.Select([]string{"Time Slot"}).Records()[1:])
 
-	judges := []*proto.Judge{}
-	for i, row := range judgeDf.Records()[1:] {
-		eventsTrimmed := strings.TrimSpace(row[2])
-		events := strings.Split(eventsTrimmed, ",")
-		judges = append(judges, &proto.Judge{
-			Number:    int32(i),
-			Firstname: row[0],
-			Lastname:  row[1],
-			Judgeable: events,
-		})
+	groupSize := ParseGroupSize(conferenceDf.Select([]string{"Group Size"}).Records()[1])
+
+	log.Println("================================== Registered judges")
+	for _, j := range judges {
+		log.Println(j.Firstname, j.Lastname, j.Judgeable)
 	}
-
-	startTime, err := time.Parse(
-		"01/02/2006 15:04",
-		conferenceDf.Select([]string{"Start Time"}).Records()[1][0],
-	)
-	if err != nil {
-		panic(err)
+	log.Println("================================== Registered rooms")
+	for _, r := range rooms {
+		log.Println(r.Name, r.JudgeCapacity)
 	}
-
-	divisions := []int64{}
-	for _, row := range conferenceDf.Select([]string{"Time Slot"}).Records()[1:] {
-		if row[0] == "NaN" {
-			continue
-		}
-
-		slot, err := strconv.ParseInt(row[0], 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		divisions = append(divisions, slot)
+	log.Println("================================== Registered events")
+	eventStr := []string{}
+	for _, e := range events {
+		eventStr = append(eventStr, e.Id)
 	}
+	log.Println(strings.Join(eventStr, ", "))
 
-	rooms := []*proto.Room{}
-	for _, row := range conferenceDf.Select([]string{"Room", "Judge Capacity"}).Records()[1:] {
-		capacity, err := strconv.ParseInt(row[1], 10, 32)
-		if err != nil {
-			capacity = 0
-		}
-		rooms = append(rooms, &proto.Room{
-			Name:          row[0],
-			JudgeCapacity: int32(capacity),
-		})
-	}
-
-	events := []*proto.Event{}
-	for _, row := range conferenceDf.Select([]string{"Event"}).Records()[1:] {
-		events = append(events, &proto.Event{
-			Id: row[0],
-		})
-	}
-
-	groupSizeStr := conferenceDf.Select([]string{"Group Size"}).Records()[1][0]
-	groupSize, err := strconv.ParseInt(groupSizeStr, 10, 32)
-	if err != nil {
-		panic(err)
-	}
-
+	//* schedule
 	c := scheduler.NewContext(
 		&proto.Time{
 			Start:     startTime.Unix(),
@@ -248,6 +116,7 @@ func main() {
 
 	o := scheduler.Schedule(c, requests)
 
+	//* write to output
 	f, err = os.Create("output.csv")
 	if err != nil {
 		panic(err)

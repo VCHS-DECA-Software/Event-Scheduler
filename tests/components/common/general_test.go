@@ -221,18 +221,18 @@ func TestHasAdjacent(t *testing.T) {
 	vector := []utils.TestCase[struct {
 		List       []string
 		Index      int
-		Determiner func(string) bool
+		Determiner func(string, bool) bool
 	}, bool]{
 		{
 			Name: "has adjacent",
 			Input: struct {
 				List       []string
 				Index      int
-				Determiner func(string) bool
+				Determiner func(string, bool) bool
 			}{
 				List:  []string{"value1", "value2", "value3"},
 				Index: 1,
-				Determiner: func(value string) bool {
+				Determiner: func(value string, above bool) bool {
 					return value == "value3"
 				},
 			},
@@ -243,11 +243,11 @@ func TestHasAdjacent(t *testing.T) {
 			Input: struct {
 				List       []string
 				Index      int
-				Determiner func(string) bool
+				Determiner func(string, bool) bool
 			}{
 				List:  []string{"value1", "value2", "value3"},
 				Index: 1,
-				Determiner: func(value string) bool {
+				Determiner: func(value string, above bool) bool {
 					return false
 				},
 			},
@@ -258,11 +258,11 @@ func TestHasAdjacent(t *testing.T) {
 			Input: struct {
 				List       []string
 				Index      int
-				Determiner func(string) bool
+				Determiner func(string, bool) bool
 			}{
 				List:  []string{"value1", "value2", "value3"},
 				Index: 0,
-				Determiner: func(value string) bool {
+				Determiner: func(value string, above bool) bool {
 					return value == "value2"
 				},
 			},
@@ -273,11 +273,11 @@ func TestHasAdjacent(t *testing.T) {
 			Input: struct {
 				List       []string
 				Index      int
-				Determiner func(string) bool
+				Determiner func(string, bool) bool
 			}{
 				List:  []string{"value1", "value2", "value3"},
 				Index: 2,
-				Determiner: func(value string) bool {
+				Determiner: func(value string, above bool) bool {
 					return value == "value2"
 				},
 			},

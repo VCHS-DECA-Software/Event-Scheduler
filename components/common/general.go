@@ -72,14 +72,14 @@ func UnorderedEqual[T comparable](l1 []T, l2 []T) bool {
 	return true
 }
 
-func HasAdjacent[T any](l []T, index int, determiner func(T) bool) bool {
+func HasAdjacent[T any](l []T, index int, determiner func(value T, above bool) bool) bool {
 	if index > 0 {
-		if determiner(l[index-1]) {
+		if determiner(l[index-1], true) {
 			return true
 		}
 	}
 	if index < len(l)-1 {
-		if determiner(l[index+1]) {
+		if determiner(l[index+1], false) {
 			return true
 		}
 	}

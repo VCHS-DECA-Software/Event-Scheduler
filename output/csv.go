@@ -35,7 +35,8 @@ func CSV(f io.Writer, output scheduler.Output) error {
 			}
 			judges = append(
 				judges, fmt.Sprintf(
-					"%v %v %v",
+					"%d - %v %v %v",
+					j.Judge.Number,
 					j.Judge.Firstname,
 					j.Judge.Lastname,
 					accepted,

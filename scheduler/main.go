@@ -129,7 +129,7 @@ assignments:
 		return len(judges[i].Judge.Judgeable) < len(judges[j].Judge.Judgeable)
 	})
 
-	assign := func(occupied map[int]bool, a Assignment, withAdjacent bool) bool {
+	assign := func(occupied map[int]bool, a Assignment, strict bool) bool {
 		for _, j := range judges {
 			if !common.Intersects([]string{a.Event.Id}, j.Judge.Judgeable) &&
 				len(j.Judge.Judgeable) > 0 {
@@ -142,22 +142,32 @@ assignments:
 				if j.Assignments[i].Event != nil {
 					continue
 				}
-				if common.HasAdjacent(j.Assignments, i, func(adj Assignment) bool {
-					intersects := common.Intersects(adj.Group, a.Group)
-					if intersects {
-						Info(fmt.Sprintf(
-							"back to back group intersection (%v, %v), skipping...",
-							FormatGroup(adj.Group), FormatGroup(a.Group),
-						))
+
+				backToBack := false
+
+				var adjacentJudge *proto.Judge
+				var adjacentAbove bool
+				for _, j := range judges {
+					if common.HasAdjacent(j.Assignments, i, func(adj Assignment, above bool) bool {
+						intersects := common.Intersects(adj.Group, a.Group)
+						if intersects {
+							adjacentJudge = j.Judge
+							adjacentAbove = above
+						}
+						return intersects
+					}) {
+						backToBack = true
+						break
 					}
-					return intersects
-				}) {
+				}
+
+				if strict && backToBack {
 					continue
 				}
-				if withAdjacent {
+				if strict {
 					//checks if there is an (vertically) adjacent
 					//assignment with the same event
-					if common.HasAdjacent(j.Assignments, i, func(adj Assignment) bool {
+					if common.HasAdjacent(j.Assignments, i, func(adj Assignment, above bool) bool {
 						return adj.Event != nil && adj.Event.Id == a.Event.Id
 					}) {
 						j.Assignments[i] = a
@@ -165,6 +175,20 @@ assignments:
 					}
 					return false
 				}
+
+				if !strict && backToBack {
+					modifier := "below"
+					if adjacentAbove {
+						modifier = "above"
+					}
+					Info(fmt.Sprintf(
+						"forced back to back group intersection at judge #%d timeslot #%d and %v at judge #%d",
+						j.Judge.Number, i+1,
+						modifier,
+						adjacentJudge.Number,
+					))
+				}
+
 				j.Assignments[i] = a
 				return true
 			}
@@ -188,7 +212,6 @@ assignments:
 		if assigned {
 			continue
 		}
-
 		assigned = assign(occupied, a, false)
 		if assigned {
 			continue

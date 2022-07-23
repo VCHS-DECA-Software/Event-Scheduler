@@ -119,7 +119,7 @@ func ParseJudges(rows [][]string) []*proto.Judge {
 }
 
 func ParseTime(row []string) time.Time {
-	startTime, err := time.Parse("01/02/2006 15:04", row[0])
+	startTime, err := time.ParseInLocation("01/02/2006 15:04", row[0], time.Local)
 	if err != nil {
 		panic(err)
 	}

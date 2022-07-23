@@ -228,6 +228,28 @@ assignments:
 		for _, s := range leftover {
 			log.Println(FormatEvent(s.Event), FormatGroup(s.Group))
 		}
+
+		numerator := 0
+		noJudge := map[string]bool{}
+		for _, s := range leftover {
+			judgeable := false
+			for _, j := range judges {
+				if common.Intersects(j.Judge.Judgeable, []string{s.Event.Id}) {
+					judgeable = true
+					break
+				}
+			}
+			if !judgeable {
+				numerator++
+				noJudge[s.Event.Id] = true
+			}
+		}
+		Warn(fmt.Sprintf(
+			"%v%% of leftover requests are due to having "+
+				"no judges able to judge %v",
+			(float64(numerator)/float64(len(leftover)))*100,
+			common.Keys(noJudge),
+		))
 	}
 
 	//! DEBUG: conflict checking

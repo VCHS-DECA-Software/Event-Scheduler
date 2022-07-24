@@ -145,23 +145,16 @@ assignments:
 
 				backToBack := false
 
-				var adjacentJudge *proto.Judge
-				var adjacentAbove bool
 				for _, j := range judges {
 					if common.HasAdjacent(j.Assignments, i, func(adj Assignment, above bool) bool {
-						intersects := common.Intersects(adj.Group, a.Group)
-						if intersects {
-							adjacentJudge = j.Judge
-							adjacentAbove = above
-						}
-						return intersects
+						return common.Intersects(adj.Group, a.Group)
 					}) {
 						backToBack = true
 						break
 					}
 				}
 
-				if strict && backToBack {
+				if backToBack {
 					continue
 				}
 				if strict {
@@ -174,19 +167,6 @@ assignments:
 						return true
 					}
 					return false
-				}
-
-				if !strict && backToBack {
-					modifier := "below"
-					if adjacentAbove {
-						modifier = "above"
-					}
-					Info(fmt.Sprintf(
-						"forced back to back group intersection at judge #%d timeslot #%d and %v at judge #%d",
-						j.Judge.Number, i+1,
-						modifier,
-						adjacentJudge.Number,
-					))
 				}
 
 				j.Assignments[i] = a

@@ -106,10 +106,15 @@ func ParseRequests(lines [][]string, students []*proto.Student) []*proto.Student
 func ParseJudges(rows [][]string) []*proto.Judge {
 	judges := []*proto.Judge{}
 	for i, row := range rows {
-		eventsTrimmed := strings.TrimSpace(row[2])
-		events := strings.Split(eventsTrimmed, ",")
+		events := []string{}
+		for _, e := range strings.Split(row[2], ",") {
+			trimmed := strings.TrimSpace(e)
+			if trimmed != "" {
+				events = append(events, trimmed)
+			}
+		}
 		judges = append(judges, &proto.Judge{
-			Number:    int32(i),
+			Number:    int32(i) + 1,
 			Firstname: row[0],
 			Lastname:  row[1],
 			Judgeable: events,

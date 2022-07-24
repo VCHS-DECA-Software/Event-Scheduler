@@ -4,6 +4,7 @@ import (
 	"Event-Scheduler/components/proto"
 	"Event-Scheduler/scheduler"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -124,9 +125,13 @@ func ParseJudges(rows [][]string) []*proto.Judge {
 }
 
 func ParseTime(row []string) time.Time {
-	startTime, err := time.ParseInLocation("01/02/2006 15:04", row[0], time.Local)
+	startTime, err := time.ParseInLocation(time.Kitchen, row[0], time.Local)
 	if err != nil {
-		panic(err)
+		log.Fatalf(
+			"[ERROR] timestamp parsing error! "+
+				"please ensure you have written in this exact format \"%s\" "+
+				"with the correct capitals and no spaces\n", time.Kitchen,
+		)
 	}
 	return startTime
 }

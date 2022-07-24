@@ -257,10 +257,16 @@ assignments:
 	offset := 0
 	for i := 0; i < len(c.Rooms); i++ {
 		capacity := int(c.Rooms[i].JudgeCapacity)
+
+		end := offset + capacity
+		if end > len(judges) {
+			end = len(judges)
+		}
 		housings = append(housings, Housing{
 			Room:   c.Rooms[i],
-			Judges: judges[offset : offset+capacity],
+			Judges: judges[offset:end],
 		})
+
 		offset += capacity
 		if i == len(c.Rooms)-1 && offset < len(judges) {
 			Warn(fmt.Sprintf(

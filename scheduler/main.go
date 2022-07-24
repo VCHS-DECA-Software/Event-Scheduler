@@ -262,6 +262,13 @@ assignments:
 			Judges: judges[offset : offset+capacity],
 		})
 		offset += capacity
+		if i == len(c.Rooms)-1 && offset < len(judges) {
+			Warn(fmt.Sprintf(
+				"there is not enough room to house all the judges, "+
+					"try adjusting 'Judge Capacity', %d judges will be dropped",
+				len(judges)-offset,
+			))
+		}
 	}
 
 	return Output{

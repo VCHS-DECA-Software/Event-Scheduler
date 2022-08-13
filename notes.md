@@ -1,7 +1,0 @@
- - event specific group restrictions (min and max)
- - schedule conflicted students requests with extra judges
- - give priority to larger teams
- - prioritize most popular events (when giving priority to larger teams) (by # of students)
- - implement judge event priority
- - prioritize scheduling judges with least flexibility
- - prioritize events by (average team size) * (number of students)

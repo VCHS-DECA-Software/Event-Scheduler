@@ -13,8 +13,8 @@
 to test the scheduler
 
 ```
-cd cmd/fake
-go build; ./fake
+cd cmd/real
+go build; ./real
 ```
 
 then open `output.csv` in LibreOffice or something.

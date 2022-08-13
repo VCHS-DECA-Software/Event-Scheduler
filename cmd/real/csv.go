@@ -124,20 +124,24 @@ func ParseJudges(rows [][]string) []*proto.Judge {
 	return judges
 }
 
+// used instead of time.Kitchen because google sheets adds a space
+// between the time and meridiem specifier
+var timeFormat = "3:00 PM"
+
 func ParseTime(row []string) time.Time {
-	startTime, err := time.ParseInLocation(time.Kitchen, row[0], time.Local)
+	startTime, err := time.ParseInLocation(timeFormat, row[0], time.Local)
 	if err != nil {
 		log.Fatalf(
 			"[ERROR] timestamp parsing error! "+
 				"please ensure you have written in this exact format \"%s\" "+
-				"with the correct capitals and no spaces\n", time.Kitchen,
+				"with the correct capitals and no spaces\n", timeFormat,
 		)
 	}
 	return startTime
 }
 
-func ParseDivisions(rows [][]string) []int64 {
-	divisions := []int64{}
+func ParseDivisions(rows [][]string) []int32 {
+	divisions := []int32{}
 	for _, row := range rows {
 		if row[0] == "NaN" {
 			continue
@@ -146,7 +150,7 @@ func ParseDivisions(rows [][]string) []int64 {
 		if err != nil {
 			panic(err)
 		}
-		divisions = append(divisions, slot)
+		divisions = append(divisions, int32(slot))
 	}
 	return divisions
 }
@@ -182,10 +186,10 @@ func ParseEvents(rows [][]string) []*proto.Event {
 	return events
 }
 
-func ParseGroupSize(row []string) int64 {
+func ParseNumber(row []string) int32 {
 	groupSize, err := strconv.ParseInt(row[0], 10, 32)
 	if err != nil {
 		panic(err)
 	}
-	return groupSize
+	return int32(groupSize)
 }

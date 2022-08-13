@@ -74,7 +74,8 @@ func main() {
 	startTime := ParseTime(conferenceDf.Select([]string{"Start Time"}).Records()[1])
 	divisions := ParseDivisions(conferenceDf.Select([]string{"Time Slot"}).Records()[1:])
 
-	groupSize := ParseGroupSize(conferenceDf.Select([]string{"Group Size"}).Records()[1])
+	groupSize := ParseNumber(conferenceDf.Select([]string{"Group Size"}).Records()[1])
+	examLength := ParseNumber(conferenceDf.Select([]string{"Exam Length"}).Records()[1])
 
 	log.Println("================================== Registered judges")
 	for _, j := range judges {
@@ -98,7 +99,8 @@ func main() {
 			Divisions: divisions,
 		},
 		&proto.Constraints{
-			GroupSize: int32(groupSize),
+			GroupSize:  groupSize,
+			ExamLength: examLength,
 		},
 		&proto.Registration{
 			Students: students,

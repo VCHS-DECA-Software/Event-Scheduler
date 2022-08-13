@@ -129,6 +129,18 @@ assignments:
 		return len(judges[i].Judge.Judgeable) < len(judges[j].Judge.Judgeable)
 	})
 
+	calculateOccupied := func(group []*proto.Student) map[int]bool {
+		occupied := map[int]bool{}
+		for _, j := range judges {
+			for i := 0; i < len(c.Divisions); i++ {
+				if common.Intersects(j.Assignments[i].Group, group) {
+					occupied[i] = true
+				}
+			}
+		}
+		return occupied
+	}
+
 	assign := func(occupied map[int]bool, a Assignment, strict bool) bool {
 		for _, j := range judges {
 			if !common.Intersects([]string{a.Event.Id}, j.Judge.Judgeable) &&
@@ -179,14 +191,7 @@ assignments:
 	leftover := []Assignment{}
 	for _, a := range assignments {
 		//see "algorithm" in docs/scheduling.md
-		occupied := map[int]bool{}
-		for _, j := range judges {
-			for i := 0; i < len(c.Divisions); i++ {
-				if common.Intersects(j.Assignments[i].Group, a.Group) {
-					occupied[i] = true
-				}
-			}
-		}
+		occupied := calculateOccupied(a.Group)
 
 		assigned := assign(occupied, a, true)
 		if assigned {
@@ -198,6 +203,37 @@ assignments:
 		}
 
 		leftover = append(leftover, a)
+	}
+
+	//this isn't very efficient, but I'm not a competitive programmer
+	//	nor am I attempting to pass an interview at google.
+	exams := []Exam{}
+students:
+	for _, s := range c.Students {
+		occupied := calculateOccupied([]*proto.Student{s})
+
+		start := 0
+		sum := int32(0)
+		for i := 0; i < len(c.Divisions); i++ {
+			if _, in := occupied[i]; !in {
+				sum += c.Divisions[i]
+				if sum >= c.Constraints.ExamLength {
+					exams = append(exams, Exam{
+						Start:   start,
+						Student: s,
+					})
+					continue students
+				}
+				continue
+			}
+			sum = 0
+			start = i + 1
+		}
+
+		Warn(fmt.Sprintf(
+			"could not find a suitable exam time for student %v %v",
+			s.Firstname, s.Lastname,
+		))
 	}
 
 	if len(leftover) > 0 {
@@ -280,5 +316,6 @@ assignments:
 	return Output{
 		Housings: housings,
 		Context:  c,
+		Exams:    exams,
 	}
 }

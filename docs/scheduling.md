@@ -7,6 +7,9 @@
 - time
     - `time start` - the starting time
     - `time divisions` - a list of durations specifying "slots of time"
+- constraints
+    - `group size` - the max size of a group
+    - `exam length` - the length of an exam
 - `students` - a list of students
 - `judges` - a list of judges
 - `events` - a list of events
@@ -18,6 +21,7 @@
 - `assignment` - a student + the event they wish to attend
 - `judgement` - a judge + the `assignments` they will judge throughout the divisions of time
 - `housing` - a room + the `judgements` that will be happening in the room
+- `exams` - exam times and the students that will take them
 
 #### algorithm
 
@@ -29,12 +33,17 @@ the algorithm of the scheduler works bottom to top (from the most granular decis
     1. implementation: sort judges least to greatest based on the length of their event restriction
 1. prioritize requests with the most members in their group
     1. this is done to minimize conflicts due to people being in different places at the same time
-    1. implementation: sort requests greatest to least based on the length of their group
+    1. implementation: sort requests greatest to least based on the size of their group
 1. assign requests to judges based on a few rules
     1. get the divisions of time that are "occupied" by an existing request
         - here, "occupied" means another request in the same time division that shares some students with the current request's group
     1. search all time divisions of all judges, if a time division is empty (not taken by an existing assignment) and not part of the "occupied". assign the request to it.
-        - this process is done twice, the first time an extra clause is added: "there must be at least one vertically adjacent request that has the same event type as the current request"
-    1. if the request is still unable to be assigned, add it to the leftovers
+        - to minimize students rushing around to get to all their events, we chose to disallow "back to back" events. that means, events whose group members intersect with the group members of directly adjacent events in the timeslot above or below
 1. if there are leftovers, warn the user
+1. assign students to exam times based on a few rules
+    1. get the divisions of time that are "occupied" by an existing assignment
+    1. check if there is a block of consecutive free timeslots whose duration is enough to house the given exam length
+        - back to back exams/judged events are okay
+    1. if so add the student and start time to the exam list
+    1. if not, warn the user
 1. attempt to spread the judges evenly across the rooms

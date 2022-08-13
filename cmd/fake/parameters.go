@@ -25,7 +25,7 @@ type ContextOptions struct {
 }
 
 func FakeContext(config ContextOptions) scheduler.ScheduleContext {
-	divisions := []int64{}
+	divisions := []int32{}
 	for i := 0; i < config.TimeDivisions; i++ {
 		divisions = append(divisions, 30)
 	}

@@ -8,11 +8,12 @@ import "proto/types.proto";
 
 message Time {
     int64 start = 1;
-    repeated int64 divisions = 2;
+    repeated int32 divisions = 2;
 }
 
 message Constraints {
     int32 groupSize = 1;
+    int32 examLength = 2;
 }
 
 //requests

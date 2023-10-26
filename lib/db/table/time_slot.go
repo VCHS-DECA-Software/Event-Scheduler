@@ -19,7 +19,6 @@ type timeSlotTable struct {
 	// Columns
 	ID       sqlite.ColumnInteger
 	ConfigID sqlite.ColumnInteger
-	Purpose  sqlite.ColumnString
 	Duration sqlite.ColumnInteger
 
 	AllColumns     sqlite.ColumnList
@@ -63,10 +62,9 @@ func newTimeSlotTableImpl(schemaName, tableName, alias string) timeSlotTable {
 	var (
 		IDColumn       = sqlite.IntegerColumn("id")
 		ConfigIDColumn = sqlite.IntegerColumn("config_id")
-		PurposeColumn  = sqlite.StringColumn("purpose")
 		DurationColumn = sqlite.IntegerColumn("duration")
-		allColumns     = sqlite.ColumnList{IDColumn, ConfigIDColumn, PurposeColumn, DurationColumn}
-		mutableColumns = sqlite.ColumnList{ConfigIDColumn, PurposeColumn, DurationColumn}
+		allColumns     = sqlite.ColumnList{IDColumn, ConfigIDColumn, DurationColumn}
+		mutableColumns = sqlite.ColumnList{ConfigIDColumn, DurationColumn}
 	)
 
 	return timeSlotTable{
@@ -75,7 +73,6 @@ func newTimeSlotTableImpl(schemaName, tableName, alias string) timeSlotTable {
 		//Columns
 		ID:       IDColumn,
 		ConfigID: ConfigIDColumn,
-		Purpose:  PurposeColumn,
 		Duration: DurationColumn,
 
 		AllColumns:     allColumns,

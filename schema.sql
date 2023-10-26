@@ -14,7 +14,7 @@ CREATE TABLE student (
 );
 
 CREATE TABLE judge ( 
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL
 );
 
@@ -29,16 +29,15 @@ CREATE TABLE judge_event_rel (
 
 -- config
 CREATE TABLE time_slot ( 
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   config_id INTEGER NOT NULL,
-  purpose TEXT,
   duration INTEGER NOT NULL,
 
   FOREIGN KEY (config_id) REFERENCES config (id)
 );
 
 CREATE TABLE config (
-  id INTEGER PRIMARY KEY,
+  id INTEGER NOT NULL PRIMARY KEY,
   time_start TEXT NOT NULL,
   max_group_size INTEGER NOT NULL,
   exam_length INTEGER NOT NULL
@@ -46,7 +45,7 @@ CREATE TABLE config (
 
 -- event requests
 CREATE TABLE student_group (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   event_id TEXT NOT NULL,
 
   FOREIGN KEY (event_id) REFERENCES event (id)

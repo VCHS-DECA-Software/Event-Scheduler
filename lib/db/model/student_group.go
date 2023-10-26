@@ -8,6 +8,6 @@
 package model
 
 type StudentGroup struct {
-	ID      *int32 `sql:"primary_key"`
+	ID      int32 `sql:"primary_key"`
 	EventID string
 }

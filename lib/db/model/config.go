@@ -8,7 +8,7 @@
 package model
 
 type Config struct {
-	ID           *int32 `sql:"primary_key"`
+	ID           int32 `sql:"primary_key"`
 	TimeStart    string
 	MaxGroupSize int32
 	ExamLength   int32

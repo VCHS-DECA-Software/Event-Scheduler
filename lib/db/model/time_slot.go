@@ -8,8 +8,7 @@
 package model
 
 type TimeSlot struct {
-	ID       *int32 `sql:"primary_key"`
+	ID       int32 `sql:"primary_key"`
 	ConfigID int32
-	Purpose  *string
 	Duration int32
 }

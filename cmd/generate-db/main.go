@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	schemaLocation := flag.String("schema", "./schema.sql", "specify the location of the database schema")
+	schemaLocation := flag.String("sql", "./schema.sql", "specify sql to execute on creation")
 	dbLocation := flag.String("db", "./local.db", "specify the location of the database file")
 	flag.Parse()
 

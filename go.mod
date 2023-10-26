@@ -10,6 +10,7 @@ require (
 )
 
 require (
-	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	golang.org/x/net v0.16.0 // indirect
 	gonum.org/v1/gonum v0.9.1 // indirect
 )

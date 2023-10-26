@@ -1,13 +1,4 @@
-PROTO_PATH = $(abspath .)
-PROTO = $(addprefix proto/,request.proto types.proto)
-
-rpc:
-	protoc \
-		--proto_path=. \
-		--go_out=. \
-		--go-grpc_out=. \
-		$(PROTO)
-
-test:
-	cd tests/components && \
-		cd common && go test
+codegen-db:
+	go run cmd/generate-db/main.go --db=schema.db
+	jet -dsn=file://$(shell pwd)/schema.db -path=./lib/db
+	rm schema.db

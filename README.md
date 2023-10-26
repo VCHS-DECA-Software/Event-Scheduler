@@ -1,20 +1,12 @@
 ## event-scheduler
 
-*mock DECA conferences*
+> schedule mock DECA conferences
 
-### documentation
+### setup (development)
 
-- `docs/conventions.md` - coding conventions
-
-- `docs/scheduling.md` - a summary of the scheduling algorithm
-
-### quickstart
-
-to test the scheduler
+1. install jet generator.
 
 ```
-cd cmd/real
-go build; ./real
+go install github.com/go-jet/jet/v2/cmd/jet@latest
 ```
 
-then open `output.csv` in LibreOffice or something.

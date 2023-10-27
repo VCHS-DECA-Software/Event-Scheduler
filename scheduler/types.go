@@ -6,7 +6,7 @@ import (
 
 // decisions
 type Output struct {
-	Housings []Housing
+	Housings map[proto.EventType][]Housing
 	Context  ScheduleContext
 	Exams    []Exam
 }

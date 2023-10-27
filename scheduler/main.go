@@ -300,8 +300,6 @@ students:
 	// 	}
 	// }
 
-	//try and spread out judges evenly throughout the rooms
-	housings := []Housing{}
 	typedJudgeSet := make(map[proto.EventType][]*Judgement)
 	typedRoomSet := make(map[proto.EventType][]*proto.Room)
 	for _, judge := range judges {
@@ -312,32 +310,46 @@ students:
 		typedRoomSet[room.EventType] = append(typedRoomSet[room.EventType], room)
 	}
 
-	for eventType, room := range typedRoomSet {
+	//try and spread out judges evenly throughout the rooms
+	housings := make(map[proto.EventType][]Housing)
+	for eventType, rooms := range typedRoomSet {
+		judges := typedJudgeSet[eventType]
+		housings[eventType] = make([]Housing, len(rooms))
+
+		roomIndex := 0
+		judgeIndex := 0
+		filledExplored := 0
+		for judgeIndex < len(judges) {
+			room := rooms[roomIndex]
+			housing := housings[eventType][roomIndex]
+			if housing.Room == nil {
+				housing.Room = room
+			}
+
+			if len(housing.Judges) < int(housing.Room.JudgeCapacity) {
+				housing.Judges = append(housing.Judges, judges[judgeIndex])
+				housings[eventType][roomIndex] = housing
+				judgeIndex++
+				filledExplored = 0
+			} else {
+				filledExplored++
+				if filledExplored == len(rooms) {
+					Warn(fmt.Sprintf(
+						"there is not enough room to house all the judges for the event type \"%s\""+
+							"try adjusting 'Judge Capacity', %d judges will be dropped",
+						eventType.String(), len(judges)-judgeIndex,
+					))
+				}
+			}
+
+			roomIndex++
+			if roomIndex == len(rooms) {
+				roomIndex = 0
+			}
+		}
 	}
 
-	offset := 0
-	for i := 0; i < len(c.Rooms); i++ {
-		capacity := int(c.Rooms[i].JudgeCapacity)
-
-		end := offset + capacity
-		if end > len(judges) {
-			end = len(judges)
-		}
-
-		housings = append(housings, Housing{
-			Room:   c.Rooms[i],
-			Judges: judges[offset:end],
-		})
-
-		offset += capacity
-		if i == len(c.Rooms)-1 && offset < len(judges) {
-			Warn(fmt.Sprintf(
-				"there is not enough room to house all the judges, "+
-					"try adjusting 'Judge Capacity', %d judges will be dropped",
-				len(judges)-offset,
-			))
-		}
-	}
+	log.Println(housings)
 
 	return Output{
 		Housings: housings,

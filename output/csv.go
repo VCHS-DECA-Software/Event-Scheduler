@@ -16,10 +16,12 @@ func CSV(f io.Writer, output scheduler.Output) error {
 	writer := csv.NewWriter(f)
 
 	rooms := []string{""}
-	for _, h := range output.Housings {
-		rooms = append(rooms, h.Room.Name)
-		if len(h.Judges) > 0 {
-			rooms = append(rooms, make([]string, len(h.Judges)-1)...)
+	for _, housings := range output.Housings {
+		for _, h := range housings {
+			rooms = append(rooms, fmt.Sprintf("%s (%s)", h.Room.Name, h.Room.EventType))
+			if len(h.Judges) > 0 {
+				rooms = append(rooms, make([]string, len(h.Judges)-1)...)
+			}
 		}
 	}
 	err := writer.Write(rooms)
@@ -28,23 +30,25 @@ func CSV(f io.Writer, output scheduler.Output) error {
 	}
 
 	judges := []string{"Timeslots"}
-	for _, h := range output.Housings {
-		for _, j := range h.Judges {
-			accepted := j.Judge.Judgeable
-			if len(accepted) == 0 {
-				for _, e := range output.Context.Events {
-					accepted = append(accepted, e.Id)
+	for _, housings := range output.Housings {
+		for _, h := range housings {
+			for _, j := range h.Judges {
+				accepted := j.Judge.Judgeable
+				if len(accepted) == 0 {
+					for _, e := range output.Context.Events {
+						accepted = append(accepted, e.Id)
+					}
 				}
+				judges = append(
+					judges, fmt.Sprintf(
+						"%d - %v %v %v",
+						j.Judge.Number,
+						j.Judge.Firstname,
+						j.Judge.Lastname,
+						accepted,
+					),
+				)
 			}
-			judges = append(
-				judges, fmt.Sprintf(
-					"%d - %v %v %v",
-					j.Judge.Number,
-					j.Judge.Firstname,
-					j.Judge.Lastname,
-					accepted,
-				),
-			)
 		}
 	}
 	err = writer.Write(judges)
@@ -64,29 +68,31 @@ func CSV(f io.Writer, output scheduler.Output) error {
 		}
 		start = end
 
-		for _, h := range output.Housings {
-			for _, j := range h.Judges {
-				if i >= len(j.Assignments) {
-					row = append(row, "")
-					continue
-				}
-				names := []string{}
-				for _, s := range j.Assignments[i].Group {
-					names = append(names, fmt.Sprintf(
-						"%v %v",
-						s.Firstname,
-						s.Lastname,
+		for _, housings := range output.Housings {
+			for _, h := range housings {
+				for _, j := range h.Judges {
+					if i >= len(j.Assignments) {
+						row = append(row, "")
+						continue
+					}
+					names := []string{}
+					for _, s := range j.Assignments[i].Group {
+						names = append(names, fmt.Sprintf(
+							"%v %v",
+							s.Firstname,
+							s.Lastname,
+						))
+					}
+					if j.Assignments[i].Event == nil {
+						row = append(row, "")
+						continue
+					}
+					row = append(row, fmt.Sprintf(
+						"%v - %v",
+						strings.Join(names, ", "),
+						j.Assignments[i].Event.Id,
 					))
 				}
-				if j.Assignments[i].Event == nil {
-					row = append(row, "")
-					continue
-				}
-				row = append(row, fmt.Sprintf(
-					"%v - %v",
-					strings.Join(names, ", "),
-					j.Assignments[i].Event.Id,
-				))
 			}
 		}
 

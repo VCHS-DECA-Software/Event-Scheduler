@@ -180,10 +180,11 @@ var eventTypes = map[string]proto.EventType{
 }
 
 func ParseEventType(text string) proto.EventType {
-	eventType, ok := eventTypes[strings.ToLower(text)]
+	eventType, ok := eventTypes[strings.ToLower(strings.Trim(text, " "))]
 	if !ok {
 		log.Fatalf(
-			"[ERROR] unknown event type, please specify an event type of either \"roleplay\" or \"written\"",
+			"[ERROR] unknown event type, please specify an event type of either \"roleplay\" or \"written\" got \"%s\"",
+			text,
 		)
 	}
 	return eventType

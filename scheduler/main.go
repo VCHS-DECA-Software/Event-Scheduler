@@ -349,8 +349,6 @@ students:
 		}
 	}
 
-	log.Println(housings)
-
 	return Output{
 		Housings: housings,
 		Context:  c,

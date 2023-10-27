@@ -90,7 +90,6 @@ func ParseRequests(lines [][]string, students *[]*proto.Student) []*proto.Studen
 					name,
 				))
 				*students = append(*students, s)
-				continue
 			}
 			group = append(group, s.Email)
 		}

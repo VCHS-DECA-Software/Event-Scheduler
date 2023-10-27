@@ -349,8 +349,13 @@ students:
 		}
 	}
 
+	flattenedHousing := []Housing{}
+	for _, list := range housings {
+		flattenedHousing = append(flattenedHousing, list...)
+	}
+
 	return Output{
-		Housings: housings,
+		Housings: flattenedHousing,
 		Context:  c,
 		Exams:    exams,
 	}

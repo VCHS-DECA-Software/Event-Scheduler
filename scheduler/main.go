@@ -69,7 +69,7 @@ func NewContext(
 }
 
 func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
-	excludedFromExams := make(map[string]bool)
+	shouldTakeExam := make(map[string]bool)
 
 	assignments := []Assignment{}
 assignments:
@@ -96,9 +96,9 @@ assignments:
 			continue
 		}
 
-		if event.EventType == proto.EventType_WRITTEN {
+		if event.EventType == proto.EventType_ROLEPLAY {
 			for _, student := range r.Group {
-				excludedFromExams[student] = true
+				shouldTakeExam[student] = true
 			}
 		}
 
@@ -218,7 +218,7 @@ assignments:
 	exams := []Exam{}
 students:
 	for _, s := range c.Students {
-		if excludedFromExams[s.Email] {
+		if !shouldTakeExam[s.Email] {
 			continue
 		}
 

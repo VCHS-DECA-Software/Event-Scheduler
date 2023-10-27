@@ -46,4 +46,4 @@ the algorithm of the scheduler works bottom to top (from the most granular decis
         - back to back exams/judged events are okay
     1. if so add the student and start time to the exam list
     1. if not, warn the user
-1. attempt to spread the judges evenly across the rooms
+1. attempt to spread the judges evenly across the rooms, match judge event types to room event types

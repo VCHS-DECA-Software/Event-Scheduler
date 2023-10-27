@@ -43,11 +43,12 @@ func main() {
 	}
 
 	lines = lines[1:]
-	students := ParseStudents(lines)
+	parsedStudents := ParseStudents(lines)
+	students := &parsedStudents
 	requests := ParseRequests(lines, students)
 
 	log.Println("================================== Registered students")
-	for _, s := range students {
+	for _, s := range *students {
 		log.Println(s.Firstname, s.Lastname, s.Email)
 	}
 	log.Println("================================== Registered requests")
@@ -68,8 +69,8 @@ func main() {
 	conferenceDf := dataframe.ReadCSV(conferenceFile)
 
 	judges := ParseJudges(judgeDf.Records()[1:])
-	rooms := ParseRooms(conferenceDf.Select([]string{"Room", "Judge Capacity"}).Records()[1:])
-	events := ParseEvents(conferenceDf.Select([]string{"Event"}).Records()[1:])
+	rooms := ParseRooms(conferenceDf.Select([]string{"Room", "Judge Capacity", "Room Event Type"}).Records()[1:])
+	events := ParseEvents(conferenceDf.Select([]string{"Event", "Event Type"}).Records()[1:])
 
 	startTime := ParseTime(conferenceDf.Select([]string{"Start Time"}).Records()[1])
 	divisions := ParseDivisions(conferenceDf.Select([]string{"Time Slot"}).Records()[1:])
@@ -103,7 +104,7 @@ func main() {
 			ExamLength: examLength,
 		},
 		&proto.Registration{
-			Students: students,
+			Students: *students,
 			Judges:   judges,
 			Rooms:    rooms,
 			Events:   events,
@@ -113,7 +114,7 @@ func main() {
 	log.Println("==================================")
 	log.Printf(
 		"[INFO] scheduling with %v students, %v requests, and %v judges\n",
-		len(students), len(requests), len(judges),
+		len(*students), len(requests), len(judges),
 	)
 
 	o := scheduler.Schedule(c, requests)

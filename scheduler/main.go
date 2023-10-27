@@ -69,6 +69,8 @@ func NewContext(
 }
 
 func Schedule(c ScheduleContext, requests []*proto.StudentRequest) Output {
+	excludedFromExams := make(map[string]bool)
+
 	assignments := []Assignment{}
 assignments:
 	for _, r := range requests {
@@ -92,6 +94,12 @@ assignments:
 				r.Event,
 			))
 			continue
+		}
+
+		if event.EventType == proto.EventType_WRITTEN {
+			for _, student := range r.Group {
+				excludedFromExams[student] = true
+			}
 		}
 
 		for _, a := range assignments {
@@ -210,6 +218,10 @@ assignments:
 	exams := []Exam{}
 students:
 	for _, s := range c.Students {
+		if excludedFromExams[s.Email] {
+			continue
+		}
+
 		occupied := calculateOccupied([]*proto.Student{s})
 
 		start := 0
@@ -290,6 +302,19 @@ students:
 
 	//try and spread out judges evenly throughout the rooms
 	housings := []Housing{}
+	typedJudgeSet := make(map[proto.EventType][]*Judgement)
+	typedRoomSet := make(map[proto.EventType][]*proto.Room)
+	for _, judge := range judges {
+		judgeEventType := c.Events[judge.Judge.Judgeable[0]].EventType
+		typedJudgeSet[judgeEventType] = append(typedJudgeSet[judgeEventType], judge)
+	}
+	for _, room := range c.Rooms {
+		typedRoomSet[room.EventType] = append(typedRoomSet[room.EventType], room)
+	}
+
+	for eventType, room := range typedRoomSet {
+	}
+
 	offset := 0
 	for i := 0; i < len(c.Rooms); i++ {
 		capacity := int(c.Rooms[i].JudgeCapacity)
@@ -298,6 +323,7 @@ students:
 		if end > len(judges) {
 			end = len(judges)
 		}
+
 		housings = append(housings, Housing{
 			Room:   c.Rooms[i],
 			Judges: judges[offset:end],

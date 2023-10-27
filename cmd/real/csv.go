@@ -66,7 +66,7 @@ func ParseStudents(lines [][]string) []*proto.Student {
 	return students
 }
 
-func ParseRequests(lines [][]string, students []*proto.Student) []*proto.StudentRequest {
+func ParseRequests(lines [][]string, students *[]*proto.Student) []*proto.StudentRequest {
 	requests := []*proto.StudentRequest{}
 	for i, l := range lines {
 		event := strings.Split(l[3], " ")[0]
@@ -79,17 +79,17 @@ func ParseRequests(lines [][]string, students []*proto.Student) []*proto.Student
 			}
 		}
 
-		group := []string{students[i].Email}
+		group := []string{(*students)[i].Email}
 		for _, name := range partners {
 			first, last := SplitName(name)
-			s, new := FindStudent(students, first, last)
+			s, new := FindStudent(*students, first, last)
 			if new {
 				scheduler.Info(fmt.Sprintf(
 					"couldn't find a student by the name \"%v\", "+
 						"automatically adding it to the student list...",
 					name,
 				))
-				students = append(students, s)
+				*students = append(*students, s)
 				continue
 			}
 			group = append(group, s.Email)
@@ -168,9 +168,25 @@ func ParseRooms(rows [][]string) []*proto.Room {
 		rooms = append(rooms, &proto.Room{
 			Name:          row[0],
 			JudgeCapacity: int32(capacity),
+			EventType:     ParseEventType(row[2]),
 		})
 	}
 	return rooms
+}
+
+var eventTypes = map[string]proto.EventType{
+	"roleplay": proto.EventType_ROLEPLAY,
+	"written":  proto.EventType_WRITTEN,
+}
+
+func ParseEventType(text string) proto.EventType {
+	eventType, ok := eventTypes[strings.ToLower(text)]
+	if !ok {
+		log.Fatalf(
+			"[ERROR] unknown event type, please specify an event type of either \"roleplay\" or \"written\"",
+		)
+	}
+	return eventType
 }
 
 func ParseEvents(rows [][]string) []*proto.Event {
@@ -180,7 +196,8 @@ func ParseEvents(rows [][]string) []*proto.Event {
 			continue
 		}
 		events = append(events, &proto.Event{
-			Id: row[0],
+			Id:        row[0],
+			EventType: ParseEventType(row[1]),
 		})
 	}
 	return events
